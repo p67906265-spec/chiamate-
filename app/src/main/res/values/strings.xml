@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Gestione Chiamate</string>
+    <string name="tab_preferiti">Preferiti</string>
+    <string name="tab_tastierino">Tastierino</string>
+    <string name="tab_rubrica">Rubrica</string>
+    <string name="tab_chiamate">Chiamate</string>
+    <string name="tab_sms">SMS</string>
+    <string name="scegli_contatto">Scegli contatto per il preferito %1$d</string>
+    <string name="nessun_preferito">Tocca per impostare</string>
+    <string name="chiama">Chiama</string>
+    <string name="elimina_preferito">Rimuovi</string>
+    <string name="permessi_necessari">Per funzionare, l\'app ha bisogno dei permessi di rubrica, telefono e SMS.</string>
+    <string name="concedi_permessi">Concedi permessi</string>
+    <string name="imposta_dialer_predefinito">Imposta come app Telefono predefinita</string>
+    <string name="riaggancia">Riaggancia</string>
+    <string name="chiamata_in_corso">Chiamata in corso…</string>
+</resources>

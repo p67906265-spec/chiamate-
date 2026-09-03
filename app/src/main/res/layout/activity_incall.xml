@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/primary_dark"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/txtStato"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:text="@string/chiamata_in_corso"
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/txtNumeroChiamante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtDigitato"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:minHeight="32dp" />
+
+    <!-- Tastierino DTMF sempre disponibile durante la chiamata -->
+    <GridLayout
+        android:id="@+id/gridTasti"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:columnCount="3"
+        android:rowCount="4" />
+
+    <ImageButton
+        android:id="@+id/btnRiaggancia"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_circle_end"
+        android:contentDescription="@string/riaggancia"
+        android:src="@android:drawable/ic_menu_close_clear_cancel" />
+
+</LinearLayout>

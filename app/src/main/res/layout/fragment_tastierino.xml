@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/txtNumeroDigitato"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:minHeight="48dp"
+            android:paddingEnd="48dp" />
+
+        <ImageButton
+            android:id="@+id/btnBackspace"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="end|center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/riaggancia"
+            android:src="@android:drawable/ic_input_delete"
+            android:visibility="invisible" />
+
+    </FrameLayout>
+
+    <GridLayout
+        android:id="@+id/gridTasti"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp"
+        android:columnCount="3"
+        android:rowCount="4" />
+
+    <ImageButton
+        android:id="@+id/btnChiama"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_circle_call"
+        android:contentDescription="@string/chiama"
+        android:src="@android:drawable/ic_menu_call" />
+
+</LinearLayout>
