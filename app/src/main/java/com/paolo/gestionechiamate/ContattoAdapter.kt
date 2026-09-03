@@ -27,9 +27,14 @@ class ContattoAdapter(private val dati: List<Contatto>) :
         holder.txtIniziale.text = contatto.nome.take(1).uppercase()
         holder.txtNome.text = contatto.nome
         holder.txtNumero.text = contatto.numero
-        val chiama = { ChiamaHelper.chiama(holder.itemView.context, contatto.numero) }
-        holder.btnChiama.setOnClickListener { chiama() }
-        holder.itemView.setOnClickListener { chiama() }
+        holder.btnChiama.setOnClickListener {
+            ChiamaHelper.chiama(holder.itemView.context, contatto.numero)
+        }
+        holder.itemView.setOnClickListener {
+            ChiamaHelper.apriSchedaContatto(
+                holder.itemView.context, contatto.id, contatto.lookupKey, contatto.numero
+            )
+        }
     }
 
     override fun getItemCount() = dati.size

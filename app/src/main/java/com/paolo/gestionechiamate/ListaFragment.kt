@@ -161,6 +161,6 @@ class ListaFragment : Fragment() {
     }
 }
 
-data class Contatto(val nome: String, val numero: String)
+data class Contatto(val id: Long, val lookupKey: String?, val nome: String, val numero: String)
 data class VoceChiamata(val nome: String, val numero: String, val dataFormattata: String)
 data class Sms(val mittente: String, val corpo: String, val dataFormattata: String)
