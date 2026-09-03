@@ -8,7 +8,5 @@
 
     <style name="Theme.GestioneChiamate.InCall" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/primary_dark</item>
-        <item name="android:windowShowWhenLocked" tools:targetApi="27">true</item>
-        <item name="android:windowTurnScreenOn" tools:targetApi="27">true</item>
     </style>
 </resources>
