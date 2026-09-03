@@ -23,4 +23,12 @@ object ChiamaHelper {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
+
+    /** Apre il pannello di chiamata con il numero già inserito, senza chiamare subito. */
+    fun apriPannelloChiamata(context: Context, numero: String) {
+        if (numero.isBlank()) return
+        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$numero"))
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
 }

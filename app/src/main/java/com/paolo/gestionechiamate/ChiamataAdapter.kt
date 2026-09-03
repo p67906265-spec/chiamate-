@@ -26,9 +26,12 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
         val voce = dati[position]
         holder.txtNome.text = voce.nome
         holder.txtData.text = voce.dataFormattata
-        val chiama = { ChiamaHelper.chiama(holder.itemView.context, voce.numero) }
-        holder.btnChiama.setOnClickListener { chiama() }
-        holder.itemView.setOnClickListener { chiama() }
+        holder.btnChiama.setOnClickListener {
+            ChiamaHelper.chiama(holder.itemView.context, voce.numero)
+        }
+        holder.itemView.setOnClickListener {
+            ChiamaHelper.apriPannelloChiamata(holder.itemView.context, voce.numero)
+        }
     }
 
     override fun getItemCount() = dati.size

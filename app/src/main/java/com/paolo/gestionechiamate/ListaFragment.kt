@@ -96,7 +96,16 @@ class ListaFragment : Fragment() {
                 if (!numero.isNullOrBlank()) lista.add(Contatto(nome ?: numero, numero))
             }
         }
-        return lista.distinctBy { it.numero }
+        // Un numero può comparire più volte perché lo stesso contatto è sincronizzato
+        // da più fonti (memoria telefono + account Google) con formattazioni diverse
+        // (spazi, trattini, prefisso internazionale). Normalizzo prima di deduplicare.
+        return lista.distinctBy { normalizzaNumero(it.numero) }
+    }
+
+    private fun normalizzaNumero(numero: String): String {
+        var soloCifre = numero.filter { it.isDigit() }
+        if (soloCifre.length > 10) soloCifre = soloCifre.takeLast(10)
+        return soloCifre
     }
 
     // ---------- Chiamate ----------
