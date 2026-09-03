@@ -81,6 +81,8 @@ class ListaFragment : Fragment() {
         val cursor: Cursor? = requireContext().contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY,
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                 ContactsContract.CommonDataKinds.Phone.NUMBER
             ),
@@ -88,12 +90,16 @@ class ListaFragment : Fragment() {
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
         )
         cursor?.use {
+            val idxId = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+            val idxLookup = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY)
             val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
             val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
             while (it.moveToNext()) {
+                val id = if (idxId >= 0) it.getLong(idxId) else 0L
+                val lookup = if (idxLookup >= 0) it.getString(idxLookup) else null
                 val nome = if (idxNome >= 0) it.getString(idxNome) else null
                 val numero = if (idxNum >= 0) it.getString(idxNum) else null
-                if (!numero.isNullOrBlank()) lista.add(Contatto(nome ?: numero, numero))
+                if (!numero.isNullOrBlank()) lista.add(Contatto(id, lookup, nome ?: numero, numero))
             }
         }
         // Un numero può comparire più volte perché lo stesso contatto è sincronizzato
