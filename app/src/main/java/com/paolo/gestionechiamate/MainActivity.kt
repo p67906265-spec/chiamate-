@@ -52,11 +52,11 @@ class MainActivity : AppCompatActivity() {
         viewPager.offscreenPageLimit = 4
 
         val titoli = listOf(
-            getString(R.string.tab_preferiti),
-            getString(R.string.tab_tastierino),
-            getString(R.string.tab_rubrica),
             getString(R.string.tab_chiamate),
-            getString(R.string.tab_sms)
+            getString(R.string.tab_sms),
+            getString(R.string.tab_rubrica),
+            getString(R.string.tab_preferiti),
+            getString(R.string.tab_tastierino)
         )
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
@@ -111,11 +111,11 @@ class MainActivity : AppCompatActivity() {
     private class PagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
         override fun getItemCount() = 5
         override fun createFragment(position: Int): Fragment = when (position) {
-            0 -> PreferitiFragment()
-            1 -> TastierinoFragment()
+            0 -> ListaFragment.nuova(ListaFragment.TIPO_CHIAMATE)
+            1 -> ListaFragment.nuova(ListaFragment.TIPO_SMS)
             2 -> ListaFragment.nuova(ListaFragment.TIPO_RUBRICA)
-            3 -> ListaFragment.nuova(ListaFragment.TIPO_CHIAMATE)
-            else -> ListaFragment.nuova(ListaFragment.TIPO_SMS)
+            3 -> PreferitiFragment()
+            else -> TastierinoFragment()
         }
     }
 }
