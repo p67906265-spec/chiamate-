@@ -11,13 +11,30 @@ android {
         applicationId "com.paolo.gestionechiamate"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
+    }
+
+    // Chiave di firma fissa: senza questa, ogni build su GitHub Actions genera
+    // una chiave diversa e Android rifiuta l'aggiornamento chiedendo di
+    // disinstallare prima. Con questa chiave fissa gli aggiornamenti funzionano
+    // normalmente (basta installare il nuovo APK sopra il vecchio).
+    signingConfigs {
+        fissa {
+            storeFile file("../keystore/gestione-chiamate.keystore")
+            storePassword "gestionechiamate2026"
+            keyAlias "gestionechiamate"
+            keyPassword "gestionechiamate2026"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.fissa
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.fissa
         }
     }
 
