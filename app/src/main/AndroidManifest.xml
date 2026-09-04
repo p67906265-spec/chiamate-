@@ -53,6 +53,11 @@
             android:exported="false"
             android:theme="@style/Theme.GestioneChiamate" />
 
+        <activity
+            android:name=".DettaglioChiamateActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GestioneChiamate" />
+
         <service
             android:name=".BloccoChiamateService"
             android:permission="android.permission.BIND_SCREENING_SERVICE"

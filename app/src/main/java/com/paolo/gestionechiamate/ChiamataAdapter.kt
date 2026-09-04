@@ -30,7 +30,11 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
             ChiamaHelper.chiama(holder.itemView.context, voce.numero)
         }
         holder.itemView.setOnClickListener {
-            ChiamaHelper.apriPannelloChiamata(holder.itemView.context, voce.numero)
+            val context = holder.itemView.context
+            val intent = android.content.Intent(context, DettaglioChiamateActivity::class.java)
+            intent.putExtra(DettaglioChiamateActivity.EXTRA_NUMERO, voce.numero)
+            intent.putExtra(DettaglioChiamateActivity.EXTRA_NOME, voce.nome)
+            context.startActivity(intent)
         }
     }
 
