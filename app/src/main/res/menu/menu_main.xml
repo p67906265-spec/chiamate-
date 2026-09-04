@@ -2,6 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/azione_impostazioni"
+        android:title="Impostazioni"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/azione_dialer_predefinito"
         android:title="@string/imposta_dialer_predefinito"
         app:showAsAction="never" />

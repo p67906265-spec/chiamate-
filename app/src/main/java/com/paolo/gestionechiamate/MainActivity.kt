@@ -21,8 +21,6 @@ class MainActivity : AppCompatActivity() {
     private val richiediPermessi = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { risultati ->
-        // Se qualche permesso viene negato, le singole schermate mostrano comunque
-        // un messaggio e permettono di riprovare.
         setupViewPager()
     }
 
@@ -40,7 +38,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Aggiorna i preferiti/rubrica quando si torna alla schermata (es. dopo aver dato i permessi)
         (findViewById<ViewPager2>(R.id.viewPager).adapter as? PagerAdapter)?.notifyDataSetChanged()
     }
 
@@ -70,6 +67,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.azione_impostazioni) {
+            startActivity(Intent(this, ImpostazioniActivity::class.java))
+            return true
+        }
         if (item.itemId == R.id.azione_dialer_predefinito) {
             richiediRuoloDialer()
             return true

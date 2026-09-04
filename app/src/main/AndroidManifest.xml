@@ -2,11 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Rubrica -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
 
-    <!-- Chiamate -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -14,18 +12,17 @@
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
 
-    <!-- SMS -->
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
 
-    <!-- Overlay tastierino durante la chiamata (fallback se l'app non è il dialer di default) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -39,7 +36,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Permette all'app di gestire il tasto "Chiama" di sistema -->
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -48,11 +44,24 @@
         </activity>
 
         <activity
+            android:name=".ImpostazioniActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GestioneChiamate" />
+
+        <activity
             android:name=".ContattoDettaglioActivity"
             android:exported="false"
             android:theme="@style/Theme.GestioneChiamate" />
 
-        <!-- Schermata mostrata durante una chiamata attiva, con tastierino sempre visibile -->
+        <service
+            android:name=".BloccoChiamateService"
+            android:permission="android.permission.BIND_SCREENING_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".InCallActivity"
             android:exported="false"
@@ -62,8 +71,6 @@
             android:excludeFromRecents="true"
             android:theme="@style/Theme.GestioneChiamate.InCall" />
 
-        <!-- Servizio richiesto da Android per diventare app "Telefono" (dialer) predefinita.
-             Necessario per mostrare la nostra InCallActivity durante le chiamate reali. -->
         <service
             android:name=".MyInCallService"
             android:permission="android.permission.BIND_INCALL_SERVICE"
@@ -76,8 +83,6 @@
             </intent-filter>
         </service>
 
-        <!-- Servizio overlay: mostra il tastierino sopra qualunque schermo mentre la chiamata è attiva,
-             utile anche se l'app non è impostata come dialer predefinito -->
         <service
             android:name=".CallOverlayService"
             android:exported="false"
