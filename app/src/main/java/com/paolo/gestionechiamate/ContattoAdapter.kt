@@ -31,9 +31,11 @@ class ContattoAdapter(private val dati: List<Contatto>) :
             ChiamaHelper.chiama(holder.itemView.context, contatto.numero)
         }
         holder.itemView.setOnClickListener {
-            ChiamaHelper.apriSchedaContatto(
-                holder.itemView.context, contatto.id, contatto.lookupKey, contatto.numero
-            )
+            val context = holder.itemView.context
+            val intent = android.content.Intent(context, ContattoDettaglioActivity::class.java)
+            intent.putExtra(ContattoDettaglioActivity.EXTRA_NOME, contatto.nome)
+            intent.putExtra(ContattoDettaglioActivity.EXTRA_NUMERO, contatto.numero)
+            context.startActivity(intent)
         }
     }
 

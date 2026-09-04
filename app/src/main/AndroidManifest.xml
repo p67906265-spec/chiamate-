@@ -47,6 +47,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ContattoDettaglioActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GestioneChiamate" />
+
         <!-- Schermata mostrata durante una chiamata attiva, con tastierino sempre visibile -->
         <activity
             android:name=".InCallActivity"
