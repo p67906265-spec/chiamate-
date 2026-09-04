@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 
@@ -59,6 +60,43 @@ class MainActivity : AppCompatActivity() {
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = titoli[position]
         }.attach()
+
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_chiamate -> {
+                    viewPager.currentItem = 0
+                    true
+                }
+                R.id.nav_messaggi -> {
+                    viewPager.currentItem = 1
+                    true
+                }
+                R.id.nav_rubrica -> {
+                    viewPager.currentItem = 2
+                    true
+                }
+                R.id.nav_impostazioni -> {
+                    startActivity(Intent(this, ImpostazioniActivity::class.java))
+                    false
+                }
+                else -> false
+            }
+        }
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val idVoce = when (position) {
+                    0 -> R.id.nav_chiamate
+                    1 -> R.id.nav_messaggi
+                    2 -> R.id.nav_rubrica
+                    else -> null
+                }
+                if (idVoce != null) {
+                    bottomNav.menu.findItem(idVoce).isChecked = true
+                }
+            }
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
