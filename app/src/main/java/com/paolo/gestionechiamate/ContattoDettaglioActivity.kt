@@ -11,6 +11,8 @@ import androidx.appcompat.widget.Toolbar
 class ContattoDettaglioActivity : AppCompatActivity() {
 
     companion object {
+        const val EXTRA_ID = "id"
+        const val EXTRA_LOOKUP = "lookup"
         const val EXTRA_NOME = "nome"
         const val EXTRA_NUMERO = "numero"
     }
@@ -19,12 +21,30 @@ class ContattoDettaglioActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contatto_dettaglio)
 
+        val id = intent.getLongExtra(EXTRA_ID, 0L)
+        val lookup = intent.getStringExtra(EXTRA_LOOKUP)
         val nome = intent.getStringExtra(EXTRA_NOME) ?: "?"
         val numero = intent.getStringExtra(EXTRA_NUMERO) ?: ""
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.title = ""
         toolbar.setNavigationOnClickListener { finish() }
+
+        findViewById<ImageButton>(R.id.btnModifica).setOnClickListener {
+            val uri = if (id > 0 && !lookup.isNullOrBlank()) {
+                android.provider.ContactsContract.Contacts.getLookupUri(id, lookup)
+            } else null
+
+            val editIntent = if (uri != null) {
+                Intent(Intent.ACTION_EDIT).setDataAndType(
+                    uri, android.provider.ContactsContract.Contacts.CONTENT_ITEM_TYPE
+                )
+            } else {
+                Intent(Intent.ACTION_INSERT, android.provider.ContactsContract.Contacts.CONTENT_URI)
+                    .putExtra(android.provider.ContactsContract.Intents.Insert.PHONE, numero)
+            }
+            startActivity(editIntent)
+        }
 
         findViewById<TextView>(R.id.txtIniziale).text = nome.take(1).uppercase()
         findViewById<TextView>(R.id.txtNome).text = nome

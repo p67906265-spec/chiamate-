@@ -33,6 +33,8 @@ class ContattoAdapter(private val dati: List<Contatto>) :
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = android.content.Intent(context, ContattoDettaglioActivity::class.java)
+            intent.putExtra(ContattoDettaglioActivity.EXTRA_ID, contatto.id)
+            intent.putExtra(ContattoDettaglioActivity.EXTRA_LOOKUP, contatto.lookupKey)
             intent.putExtra(ContattoDettaglioActivity.EXTRA_NOME, contatto.nome)
             intent.putExtra(ContattoDettaglioActivity.EXTRA_NUMERO, contatto.numero)
             context.startActivity(intent)

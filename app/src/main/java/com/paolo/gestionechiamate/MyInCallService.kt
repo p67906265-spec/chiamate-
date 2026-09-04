@@ -4,19 +4,24 @@ import android.content.Intent
 import android.telecom.Call
 import android.telecom.InCallService
 
-/**
- * Viene attivato dal sistema Android solo quando questa app è impostata come
- * app "Telefono" predefinita (vedi MainActivity.richiediRuoloDialer).
- * Riceve gli oggetti Call in corso e apre InCallActivity, che mostra sempre
- * il tastierino durante la chiamata.
- */
 class MyInCallService : InCallService() {
 
     companion object {
-        // Riferimento statico alla chiamata attiva, letto da InCallActivity.
-        // android.telecom.Call non è Parcelable quindi non può passare in un Intent.
         var chiamataAttiva: Call? = null
             private set
+
+        var istanza: MyInCallService? = null
+            private set
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        istanza = this
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (istanza == this) istanza = null
     }
 
     private val callback = object : Call.Callback() {

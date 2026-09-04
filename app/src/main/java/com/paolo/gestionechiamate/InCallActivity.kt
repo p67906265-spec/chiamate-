@@ -1,5 +1,7 @@
 package com.paolo.gestionechiamate
 
+import android.content.Context
+import android.media.AudioManager
 import android.os.Bundle
 import android.telecom.Call
 import android.widget.GridLayout
@@ -7,16 +9,14 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * Schermata mostrata durante una chiamata reale (quando l'app è impostata come
- * dialer predefinito). Il tastierino DTMF è sempre visibile e utilizzabile
- * per tutta la durata della chiamata, insieme al pulsante per riagganciare.
- */
 class InCallActivity : AppCompatActivity() {
 
     private val digitato = StringBuilder()
     private lateinit var txtDigitato: TextView
     private lateinit var txtNumero: TextView
+    private lateinit var audioManager: AudioManager
+    private var altoparlanteAttivo = false
+    private var mutoAttivo = false
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -29,19 +29,21 @@ class InCallActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_incall)
 
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
         txtDigitato = findViewById(R.id.txtDigitato)
         txtNumero = findViewById(R.id.txtNumeroChiamante)
         val grid = findViewById<GridLayout>(R.id.gridTasti)
         val btnRiaggancia = findViewById<ImageButton>(R.id.btnRiaggancia)
+        val btnAltoparlante = findViewById<ImageButton>(R.id.btnAltoparlante)
+        val btnMuto = findViewById<ImageButton>(R.id.btnMuto)
 
         val call = MyInCallService.chiamataAttiva
         txtNumero.text = call?.details?.handle?.schemeSpecificPart ?: ""
         call?.registerCallback(callback)
         call?.let { aggiornaStato(it.state) }
 
-        // Il tastierino resta sempre attivo: ogni tocco invia un tono DTMF reale
-        // sulla chiamata in corso, oltre a mostrarlo sul display.
-        DialpadKeys.build(this, grid, keySizeDp = 68) { cifra ->
+        DialpadKeys.build(this, grid, keySizeDp = 60) { cifra ->
             digitato.append(cifra)
             txtDigitato.text = digitato.toString()
             val c = MyInCallService.chiamataAttiva
@@ -49,10 +51,37 @@ class InCallActivity : AppCompatActivity() {
             c?.stopDtmfTone()
         }
 
+        altoparlanteAttivo = audioManager.isSpeakerphoneOn
+        aggiornaAspettoAltoparlante(btnAltoparlante)
+        btnAltoparlante.setOnClickListener {
+            altoparlanteAttivo = !altoparlanteAttivo
+            audioManager.isSpeakerphoneOn = altoparlanteAttivo
+            aggiornaAspettoAltoparlante(btnAltoparlante)
+        }
+
+        aggiornaAspettoMuto(btnMuto)
+        btnMuto.setOnClickListener {
+            mutoAttivo = !mutoAttivo
+            MyInCallService.istanza?.setMuted(mutoAttivo)
+            aggiornaAspettoMuto(btnMuto)
+        }
+
         btnRiaggancia.setOnClickListener {
             MyInCallService.chiamataAttiva?.disconnect()
             finish()
         }
+    }
+
+    private fun aggiornaAspettoAltoparlante(bottone: ImageButton) {
+        bottone.setBackgroundResource(
+            if (altoparlanteAttivo) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
+        )
+    }
+
+    private fun aggiornaAspettoMuto(bottone: ImageButton) {
+        bottone.setBackgroundResource(
+            if (mutoAttivo) R.drawable.bg_circle_end else R.drawable.bg_dialpad_key
+        )
     }
 
     private fun aggiornaStato(state: Int) {
