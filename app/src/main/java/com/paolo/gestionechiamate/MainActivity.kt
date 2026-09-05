@@ -120,16 +120,39 @@ class MainActivity : AppCompatActivity() {
     private fun richiediRuoloDialer() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(RoleManager::class.java)
-            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)) {
-                if (!roleManager.isRoleHeld(RoleManager.ROLE_DIALER)) {
-                    startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER))
-                }
+            if (roleManager == null) {
+                toastDialer("Servizio di sistema non disponibile su questo telefono.")
+                return
+            }
+            if (!roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+                toastDialer(
+                    "Questo telefono non consente ad app di terze parti di diventare " +
+                        "l'app Telefono predefinita (limitazione del produttore/MIUI)."
+                )
+                return
+            }
+            if (roleManager.isRoleHeld(RoleManager.ROLE_DIALER)) {
+                toastDialer("Gestione Chiamate è già l'app Telefono predefinita.")
+                return
+            }
+            try {
+                startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER))
+            } catch (e: Exception) {
+                toastDialer("Non è stato possibile aprire la richiesta: ${e.message}")
             }
         } else {
-            val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
-                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
-            startActivity(intent)
+            try {
+                val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                startActivity(intent)
+            } catch (e: Exception) {
+                toastDialer("Non è stato possibile aprire la richiesta: ${e.message}")
+            }
         }
+    }
+
+    private fun toastDialer(messaggio: String) {
+        android.widget.Toast.makeText(this, messaggio, android.widget.Toast.LENGTH_LONG).show()
     }
 
     private class PagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
