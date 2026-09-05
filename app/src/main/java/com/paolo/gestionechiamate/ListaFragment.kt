@@ -57,7 +57,7 @@ class ListaFragment : Fragment() {
                 vaiAllaPagina(3)
             }
             view.findViewById<View>(R.id.btnScorciatoiaTastierino).setOnClickListener {
-                vaiAllaPagina(4)
+                mostraDialogTastierino()
             }
         }
 
@@ -92,6 +92,55 @@ class ListaFragment : Fragment() {
 
     private fun vaiAllaPagina(posizione: Int) {
         requireActivity().findViewById<ViewPager2>(R.id.viewPager).currentItem = posizione
+    }
+
+    private fun mostraDialogTastierino() {
+        val dialog = android.app.Dialog(requireContext(), android.R.style.Theme_Translucent_NoTitleBar)
+        dialog.setContentView(R.layout.dialog_tastierino)
+        dialog.window?.setLayout(
+            android.view.WindowManager.LayoutParams.MATCH_PARENT,
+            android.view.WindowManager.LayoutParams.MATCH_PARENT
+        )
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val numero = StringBuilder()
+        val txtNumero = dialog.findViewById<TextView>(R.id.txtNumeroDialog)
+        val btnBackspace = dialog.findViewById<android.widget.ImageButton>(R.id.btnBackspaceDialog)
+        val grid = dialog.findViewById<android.widget.GridLayout>(R.id.gridTastiDialog)
+        val btnChiama = dialog.findViewById<android.widget.ImageButton>(R.id.btnChiamaDialog)
+
+        fun aggiornaDisplay() {
+            txtNumero.text = numero.toString()
+            btnBackspace.visibility = if (numero.isNotEmpty()) View.VISIBLE else View.INVISIBLE
+        }
+
+        DialpadKeys.build(requireContext(), grid, keySizeDp = 60, stileScuro = true) { cifra ->
+            numero.append(cifra)
+            aggiornaDisplay()
+        }
+
+        btnBackspace.setOnClickListener {
+            if (numero.isNotEmpty()) {
+                numero.deleteCharAt(numero.length - 1)
+                aggiornaDisplay()
+            }
+        }
+        btnBackspace.setOnLongClickListener {
+            numero.clear()
+            aggiornaDisplay()
+            true
+        }
+
+        btnChiama.setOnClickListener {
+            if (numero.isNotEmpty()) {
+                ChiamaHelper.chiama(requireContext(), numero.toString())
+                dialog.dismiss()
+            }
+        }
+
+        dialog.findViewById<View>(R.id.sfondoDialog).setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
     }
 
     // ---------- Rubrica ----------
@@ -148,10 +197,22 @@ class ListaFragment : Fragment() {
             var count = 0
             while (it.moveToNext() && count < 200) {
                 val nomeCache = if (idxNome >= 0) it.getString(idxNome) else null
-                val numero = if (idxNum >= 0) it.getString(idxNum) else ""
+                val numeroGrezzo = if (idxNum >= 0) it.getString(idxNum) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
-                val nome = mappaRubrica[normalizzaNumero(numero)] ?: nomeCache ?: numero
-                lista.add(VoceChiamata(nome, numero, formato.format(Date(data))))
+
+                val numeroVisualizzato = when (numeroGrezzo) {
+                    "-1" -> "Numero sconosciuto"
+                    "-2" -> "Numero privato"
+                    "-3" -> "Cabina telefonica"
+                    "" -> "Numero sconosciuto"
+                    else -> numeroGrezzo
+                }
+
+                val nome = mappaRubrica[normalizzaNumero(numeroGrezzo)]
+                    ?: nomeCache?.takeIf { it.isNotBlank() }
+                    ?: numeroVisualizzato
+
+                lista.add(VoceChiamata(nome, numeroGrezzo, formato.format(Date(data))))
                 count++
             }
         }

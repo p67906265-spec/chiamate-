@@ -6,11 +6,6 @@ import android.view.Gravity
 import android.widget.GridLayout
 import android.widget.TextView
 
-/**
- * Costruisce le 12 cifre del tastierino (0-9, *, #) dentro il GridLayout passato.
- * Riutilizzato dalla tab "Tastierino", dalla schermata di chiamata (InCallActivity)
- * e dall'overlay flottante, cosi' il tastierino e' identico ovunque venga mostrato.
- */
 object DialpadKeys {
 
     private val LAYOUT = listOf(
@@ -25,6 +20,7 @@ object DialpadKeys {
         grid: GridLayout,
         keySizeDp: Int = 64,
         textSizeSp: Float = 22f,
+        stileScuro: Boolean = false,
         onKeyPressed: (String) -> Unit
     ) {
         grid.removeAllViews()
@@ -39,8 +35,13 @@ object DialpadKeys {
                 text = if (letters.isEmpty()) digit else "$digit\n$letters"
                 gravity = Gravity.CENTER
                 textSize = if (letters.isEmpty()) textSizeSp else textSizeSp * 0.7f
-                setTextColor(Color.parseColor("#1B1B1B"))
-                setBackgroundResource(R.drawable.bg_dialpad_key)
+                if (stileScuro) {
+                    setTextColor(Color.WHITE)
+                    setBackgroundResource(R.drawable.bg_dialpad_key_scuro)
+                } else {
+                    setTextColor(Color.parseColor("#1B1B1B"))
+                    setBackgroundResource(R.drawable.bg_dialpad_key)
+                }
                 isClickable = true
                 isFocusable = true
                 val outValue = android.util.TypedValue()
