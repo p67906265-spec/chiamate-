@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,7 +45,21 @@ class ListaFragment : Fragment() {
         val tipo = arguments?.getInt(ARG_TIPO) ?: TIPO_RUBRICA
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerView)
         val txtVuoto = view.findViewById<TextView>(R.id.txtVuoto)
+        val barraScorciatoie = view.findViewById<View>(R.id.barraScorciatoie)
         recycler.layoutManager = LinearLayoutManager(requireContext())
+
+        if (tipo == TIPO_CHIAMATE) {
+            barraScorciatoie.visibility = View.VISIBLE
+            view.findViewById<View>(R.id.btnScorciatoiaRubrica).setOnClickListener {
+                vaiAllaPagina(2)
+            }
+            view.findViewById<View>(R.id.btnScorciatoiaPreferiti).setOnClickListener {
+                vaiAllaPagina(3)
+            }
+            view.findViewById<View>(R.id.btnScorciatoiaTastierino).setOnClickListener {
+                vaiAllaPagina(4)
+            }
+        }
 
         if (!Permessi.tuttiConcessi(requireContext())) {
             txtVuoto.visibility = View.VISIBLE
@@ -75,6 +90,10 @@ class ListaFragment : Fragment() {
         return view
     }
 
+    private fun vaiAllaPagina(posizione: Int) {
+        requireActivity().findViewById<ViewPager2>(R.id.viewPager).currentItem = posizione
+    }
+
     // ---------- Rubrica ----------
     private fun caricaContatti(): List<Contatto> {
         val lista = mutableListOf<Contatto>()
@@ -102,9 +121,6 @@ class ListaFragment : Fragment() {
                 if (!numero.isNullOrBlank()) lista.add(Contatto(id, lookup, nome ?: numero, numero))
             }
         }
-        // Un numero può comparire più volte perché lo stesso contatto è sincronizzato
-        // da più fonti (memoria telefono + account Google) con formattazioni diverse
-        // (spazi, trattini, prefisso internazionale). Normalizzo prima di deduplicare.
         return lista.distinctBy { normalizzaNumero(it.numero) }
     }
 
@@ -116,6 +132,7 @@ class ListaFragment : Fragment() {
 
     // ---------- Chiamate ----------
     private fun caricaChiamate(): List<VoceChiamata> {
+        val mappaRubrica = costruisciMappaRubrica()
         val lista = mutableListOf<VoceChiamata>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -130,14 +147,39 @@ class ListaFragment : Fragment() {
             val idxData = it.getColumnIndex(CallLog.Calls.DATE)
             var count = 0
             while (it.moveToNext() && count < 200) {
-                val nome = if (idxNome >= 0) it.getString(idxNome) else null
+                val nomeCache = if (idxNome >= 0) it.getString(idxNome) else null
                 val numero = if (idxNum >= 0) it.getString(idxNum) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
-                lista.add(VoceChiamata(nome ?: numero, numero, formato.format(Date(data))))
+                val nome = mappaRubrica[normalizzaNumero(numero)] ?: nomeCache ?: numero
+                lista.add(VoceChiamata(nome, numero, formato.format(Date(data))))
                 count++
             }
         }
         return lista
+    }
+
+    private fun costruisciMappaRubrica(): Map<String, String> {
+        val mappa = mutableMapOf<String, String>()
+        val cursor: Cursor? = requireContext().contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null, null, null
+        )
+        cursor?.use {
+            val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            while (it.moveToNext()) {
+                val nome = if (idxNome >= 0) it.getString(idxNome) else null
+                val numero = if (idxNum >= 0) it.getString(idxNum) else null
+                if (nome != null && numero != null) {
+                    mappa[normalizzaNumero(numero)] = nome
+                }
+            }
+        }
+        return mappa
     }
 
     // ---------- SMS ----------
