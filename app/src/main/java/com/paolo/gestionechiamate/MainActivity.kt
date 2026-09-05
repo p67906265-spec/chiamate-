@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
                 toastDialer("Gestione Chiamate è già l'app Telefono predefinita.")
                 return
             }
+            toastDialer("Apertura richiesta di sistema…")
             try {
                 startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER))
             } catch (e: Exception) {
