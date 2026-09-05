@@ -20,6 +20,12 @@ class ImpostazioniActivity : AppCompatActivity() {
 
         findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
 
+        try {
+            val versione = packageManager.getPackageInfo(packageName, 0).versionName
+            findViewById<TextView>(R.id.txtVersione).text = "Gestione Chiamate — versione $versione"
+        } catch (e: Exception) {
+        }
+
         val gruppoTema = findViewById<RadioGroup>(R.id.gruppoTema)
         when (Impostazioni.getTema(this)) {
             Impostazioni.TEMA_CHIARO -> gruppoTema.check(R.id.radioChiaro)
