@@ -133,13 +133,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private class PagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
-        override fun getItemCount() = 5
+        override fun getItemCount() = 4
         override fun createFragment(position: Int): Fragment = when (position) {
             0 -> ListaFragment.nuova(ListaFragment.TIPO_CHIAMATE)
             1 -> ListaFragment.nuova(ListaFragment.TIPO_SMS)
             2 -> ListaFragment.nuova(ListaFragment.TIPO_RUBRICA)
-            3 -> PreferitiFragment()
-            else -> TastierinoFragment()
+            else -> PreferitiFragment()
         }
     }
 }

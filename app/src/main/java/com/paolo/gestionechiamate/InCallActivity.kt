@@ -1,7 +1,9 @@
 package com.paolo.gestionechiamate
 
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.telecom.Call
 import android.widget.GridLayout
@@ -17,6 +19,8 @@ class InCallActivity : AppCompatActivity() {
     private lateinit var audioManager: AudioManager
     private var altoparlanteAttivo = false
     private var mutoAttivo = false
+    private var attesaAttiva = false
+    private var numeroChiamante: String = ""
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -37,13 +41,17 @@ class InCallActivity : AppCompatActivity() {
         val btnRiaggancia = findViewById<ImageButton>(R.id.btnRiaggancia)
         val btnAltoparlante = findViewById<ImageButton>(R.id.btnAltoparlante)
         val btnMuto = findViewById<ImageButton>(R.id.btnMuto)
+        val btnAttesa = findViewById<ImageButton>(R.id.btnAttesa)
+        val btnMessaggio = findViewById<ImageButton>(R.id.btnMessaggio)
+        val btnAggiungiChiamata = findViewById<ImageButton>(R.id.btnAggiungiChiamata)
 
         val call = MyInCallService.chiamataAttiva
-        txtNumero.text = call?.details?.handle?.schemeSpecificPart ?: ""
+        numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
+        txtNumero.text = numeroChiamante
         call?.registerCallback(callback)
         call?.let { aggiornaStato(it.state) }
 
-        DialpadKeys.build(this, grid, keySizeDp = 60) { cifra ->
+        DialpadKeys.build(this, grid, keySizeDp = 56) { cifra ->
             digitato.append(cifra)
             txtDigitato.text = digitato.toString()
             val c = MyInCallService.chiamataAttiva
@@ -66,6 +74,28 @@ class InCallActivity : AppCompatActivity() {
             aggiornaAspettoMuto(btnMuto)
         }
 
+        aggiornaAspettoAttesa(btnAttesa)
+        btnAttesa.setOnClickListener {
+            attesaAttiva = !attesaAttiva
+            val c = MyInCallService.chiamataAttiva
+            if (attesaAttiva) c?.hold() else c?.unhold()
+            aggiornaAspettoAttesa(btnAttesa)
+        }
+
+        btnMessaggio.setOnClickListener {
+            if (numeroChiamante.isNotBlank()) {
+                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$numeroChiamante"))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            }
+        }
+
+        btnAggiungiChiamata.setOnClickListener {
+            val intent = Intent(Intent.ACTION_DIAL)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+
         btnRiaggancia.setOnClickListener {
             MyInCallService.chiamataAttiva?.disconnect()
             finish()
@@ -81,6 +111,12 @@ class InCallActivity : AppCompatActivity() {
     private fun aggiornaAspettoMuto(bottone: ImageButton) {
         bottone.setBackgroundResource(
             if (mutoAttivo) R.drawable.bg_circle_end else R.drawable.bg_dialpad_key
+        )
+    }
+
+    private fun aggiornaAspettoAttesa(bottone: ImageButton) {
+        bottone.setBackgroundResource(
+            if (attesaAttiva) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
         )
     }
 
