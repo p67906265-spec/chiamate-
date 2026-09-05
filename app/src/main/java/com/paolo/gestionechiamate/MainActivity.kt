@@ -14,8 +14,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,22 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupViewPager() {
         val viewPager = findViewById<ViewPager2>(R.id.viewPager)
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
 
         viewPager.adapter = PagerAdapter(this)
         viewPager.offscreenPageLimit = 4
-
-        val titoli = listOf(
-            getString(R.string.tab_chiamate),
-            getString(R.string.tab_sms),
-            getString(R.string.tab_rubrica),
-            getString(R.string.tab_preferiti),
-            getString(R.string.tab_tastierino)
-        )
-
-        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.text = titoli[position]
-        }.attach()
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
         bottomNav.setOnItemSelectedListener { item ->

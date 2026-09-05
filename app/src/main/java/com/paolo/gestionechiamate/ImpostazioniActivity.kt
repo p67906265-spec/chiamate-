@@ -89,13 +89,40 @@ class ImpostazioniActivity : AppCompatActivity() {
     private fun richiediRuoloFiltroChiamate() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(RoleManager::class.java)
-            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+            if (roleManager == null) {
+                mostraErroreFiltro()
+                return
+            }
+            if (!roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Il tuo telefono non consente ad app di terze parti di filtrare le chiamate. " +
+                        "Prova a cercare \"controllo chiamate\" o \"app predefinite\" nelle impostazioni di sistema.",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            try {
                 startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
+            } catch (e: Exception) {
+                mostraErroreFiltro()
             }
         } else {
-            val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
-                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
-            startActivity(intent)
+            try {
+                val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                startActivity(intent)
+            } catch (e: Exception) {
+                mostraErroreFiltro()
+            }
         }
+    }
+
+    private fun mostraErroreFiltro() {
+        android.widget.Toast.makeText(
+            this,
+            "Non è stato possibile aprire le impostazioni per il filtro chiamate su questo telefono.",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
     }
 }
