@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.provider.CallLog
 import android.provider.ContactsContract
 import android.provider.Telephony
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -37,6 +40,7 @@ class ListaFragment : Fragment() {
     }
 
     private val scope = CoroutineScope(Dispatchers.Main)
+    private var contattiCompleti: List<Contatto> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -46,6 +50,7 @@ class ListaFragment : Fragment() {
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerView)
         val txtVuoto = view.findViewById<TextView>(R.id.txtVuoto)
         val barraScorciatoie = view.findViewById<View>(R.id.barraScorciatoie)
+        val barraRicerca = view.findViewById<View>(R.id.barraRicerca)
         recycler.layoutManager = LinearLayoutManager(requireContext())
 
         if (tipo == TIPO_CHIAMATE) {
@@ -59,6 +64,18 @@ class ListaFragment : Fragment() {
             view.findViewById<View>(R.id.btnScorciatoiaTastierino).setOnClickListener {
                 mostraDialogTastierino()
             }
+        }
+
+        if (tipo == TIPO_RUBRICA) {
+            barraRicerca.visibility = View.VISIBLE
+            val editCerca = view.findViewById<EditText>(R.id.editCerca)
+            editCerca.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    filtraContatti(recycler, s?.toString() ?: "")
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            })
         }
 
         if (!Permessi.tuttiConcessi(requireContext())) {
@@ -79,6 +96,10 @@ class ListaFragment : Fragment() {
                 txtVuoto.visibility = View.VISIBLE
                 recycler.visibility = View.GONE
             } else {
+                if (tipo == TIPO_RUBRICA) {
+                    @Suppress("UNCHECKED_CAST")
+                    contattiCompleti = dati as List<Contatto>
+                }
                 recycler.adapter = when (tipo) {
                     TIPO_RUBRICA -> ContattoAdapter(dati as List<Contatto>)
                     TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
@@ -88,6 +109,17 @@ class ListaFragment : Fragment() {
         }
 
         return view
+    }
+
+    private fun filtraContatti(recycler: RecyclerView, testo: String) {
+        val filtrati = if (testo.isBlank()) {
+            contattiCompleti
+        } else {
+            contattiCompleti.filter {
+                it.nome.contains(testo, ignoreCase = true) || it.numero.contains(testo)
+            }
+        }
+        recycler.adapter = ContattoAdapter(filtrati)
     }
 
     private fun vaiAllaPagina(posizione: Int) {

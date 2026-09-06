@@ -7,12 +7,6 @@ import android.os.Build
 import android.provider.Settings
 import android.telephony.TelephonyManager
 
-/**
- * Rileva i cambi di stato della chiamata (squillo / risposta / fine chiamata).
- * Se l'app NON è impostata come Telefono predefinito, MyInCallService non viene
- * attivato dal sistema: in quel caso mostriamo un piccolo overlay flottante con
- * il tastierino come soluzione di riserva, sempre visibile sopra le altre app.
- */
 class PhoneStateReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -20,6 +14,7 @@ class PhoneStateReceiver : BroadcastReceiver() {
 
         when (stato) {
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                if (siamoGiaDialerPredefinito(context)) return
                 if (puoDisegnareOverlay(context)) {
                     val service = Intent(context, CallOverlayService::class.java)
                         .setAction(CallOverlayService.AZIONE_MOSTRA)
@@ -33,6 +28,11 @@ class PhoneStateReceiver : BroadcastReceiver() {
                 )
             }
         }
+    }
+
+    private fun siamoGiaDialerPredefinito(context: Context): Boolean {
+        val telecomManager = context.getSystemService(android.telecom.TelecomManager::class.java)
+        return telecomManager?.defaultDialerPackage == context.packageName
     }
 
     private fun puoDisegnareOverlay(context: Context): Boolean =
