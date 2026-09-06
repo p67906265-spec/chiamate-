@@ -36,11 +36,23 @@
         android:textSize="22sp"
         android:minHeight="32dp" />
 
-    <!-- Altoparlante, Muto e In attesa -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <GridLayout
+        android:id="@+id/gridTasti"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:columnCount="3"
+        android:rowCount="4"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:orientation="horizontal"
         android:gravity="center">
 
@@ -57,7 +69,7 @@
                 android:layout_height="52dp"
                 android:background="@drawable/bg_dialpad_key"
                 android:src="@android:drawable/ic_btn_speak_now"
-                android:contentDescription="Muto" />
+                android:contentDescription="Disattiva audio" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -77,22 +89,57 @@
             android:gravity="center">
 
             <ImageButton
-                android:id="@+id/btnAltoparlante"
+                android:id="@+id/btnTastierino"
                 android:layout_width="52dp"
                 android:layout_height="52dp"
                 android:background="@drawable/bg_dialpad_key"
-                android:src="@android:drawable/ic_lock_silent_mode_off"
-                android:contentDescription="Altoparlante" />
+                android:src="@drawable/ic_nav_tastierino"
+                android:contentDescription="Tastierino" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Altoparlante"
+                android:text="Tastierino"
                 android:textColor="#CCFFFFFF"
                 android:textSize="12sp" />
 
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnTelefono"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_circle_call"
+                android:src="@android:drawable/ic_menu_call"
+                android:contentDescription="Telefono" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Telefono"
+                android:textColor="#CCFFFFFF"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal"
+        android:gravity="center">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -116,52 +163,6 @@
                 android:text="In attesa"
                 android:textColor="#CCFFFFFF"
                 android:textSize="12sp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- Tastierino DTMF sempre disponibile durante la chiamata -->
-    <GridLayout
-        android:id="@+id/gridTasti"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="12dp"
-        android:columnCount="3"
-        android:rowCount="4" />
-
-    <!-- Messaggio, Termina, Aggiungi chiamata -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
-        android:orientation="horizontal"
-        android:gravity="center">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <ImageButton
-                android:id="@+id/btnMessaggio"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_dialpad_key"
-                android:src="@android:drawable/ic_dialog_email"
-                android:contentDescription="Messaggio" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Messaggio"
-                android:textColor="#CCFFFFFF"
-                android:textSize="11sp" />
 
         </LinearLayout>
 
@@ -190,20 +191,20 @@
             android:gravity="center">
 
             <ImageButton
-                android:id="@+id/btnAggiungiChiamata"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:id="@+id/btnAltro"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
                 android:background="@drawable/bg_dialpad_key"
-                android:src="@android:drawable/ic_menu_add"
-                android:contentDescription="Aggiungi chiamata" />
+                android:src="@drawable/ic_altro"
+                android:contentDescription="Altro" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Aggiungi"
+                android:text="Altro"
                 android:textColor="#CCFFFFFF"
-                android:textSize="11sp" />
+                android:textSize="12sp" />
 
         </LinearLayout>
 

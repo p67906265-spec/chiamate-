@@ -25,6 +25,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (intent?.action == Intent.ACTION_SENDTO) {
+            val redirect = Intent(this, ComponiSmsActivity::class.java)
+            redirect.data = intent.data
+            startActivity(redirect)
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
@@ -98,6 +107,10 @@ class MainActivity : AppCompatActivity() {
             richiediRuoloDialer()
             return true
         }
+        if (item.itemId == R.id.azione_sms_predefinita) {
+            richiediRuoloSms()
+            return true
+        }
         if (item.itemId == R.id.azione_permesso_overlay) {
             richiediPermessoOverlay()
             return true
@@ -155,6 +168,43 @@ class MainActivity : AppCompatActivity() {
 
     private fun toastDialer(messaggio: String) {
         android.widget.Toast.makeText(this, messaggio, android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    private fun richiediRuoloSms() {
+        try {
+            val intent = android.provider.Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT
+            val i = Intent(intent)
+                .putExtra(android.provider.Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
+            startActivity(i)
+            return
+        } catch (e: Exception) {
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(RoleManager::class.java)
+            if (roleManager == null) {
+                toastDialer("Servizio di sistema non disponibile su questo telefono.")
+                return
+            }
+            if (!roleManager.isRoleAvailable(RoleManager.ROLE_SMS)) {
+                toastDialer(
+                    "Questo telefono non consente ad app di terze parti di diventare " +
+                        "l'app SMS predefinita."
+                )
+                return
+            }
+            if (roleManager.isRoleHeld(RoleManager.ROLE_SMS)) {
+                toastDialer("Gestione Chiamate è già l'app SMS predefinita.")
+                return
+            }
+            try {
+                startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS))
+            } catch (e: Exception) {
+                toastDialer("Non è stato possibile aprire la richiesta: ${e.message}")
+            }
+        } else {
+            toastDialer("Non è stato possibile aprire la richiesta su questo telefono.")
+        }
     }
 
     private class PagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {

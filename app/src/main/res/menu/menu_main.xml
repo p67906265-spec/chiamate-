@@ -10,6 +10,10 @@
         android:title="@string/imposta_dialer_predefinito"
         app:showAsAction="never" />
     <item
+        android:id="@+id/azione_sms_predefinita"
+        android:title="Imposta come app SMS predefinita"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/azione_permesso_overlay"
         android:title="Consenti tastierino sopra le altre app"
         app:showAsAction="never" />

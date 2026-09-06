@@ -3,11 +3,12 @@ package com.paolo.gestionechiamate
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
-import android.net.Uri
 import android.os.Bundle
 import android.telecom.Call
+import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -20,6 +21,7 @@ class InCallActivity : AppCompatActivity() {
     private var altoparlanteAttivo = false
     private var mutoAttivo = false
     private var attesaAttiva = false
+    private var tastierinoVisibile = false
     private var numeroChiamante: String = ""
 
     private val callback = object : Call.Callback() {
@@ -39,11 +41,11 @@ class InCallActivity : AppCompatActivity() {
         txtNumero = findViewById(R.id.txtNumeroChiamante)
         val grid = findViewById<GridLayout>(R.id.gridTasti)
         val btnRiaggancia = findViewById<ImageButton>(R.id.btnRiaggancia)
-        val btnAltoparlante = findViewById<ImageButton>(R.id.btnAltoparlante)
+        val btnTelefono = findViewById<ImageButton>(R.id.btnTelefono)
         val btnMuto = findViewById<ImageButton>(R.id.btnMuto)
         val btnAttesa = findViewById<ImageButton>(R.id.btnAttesa)
-        val btnMessaggio = findViewById<ImageButton>(R.id.btnMessaggio)
-        val btnAggiungiChiamata = findViewById<ImageButton>(R.id.btnAggiungiChiamata)
+        val btnTastierino = findViewById<ImageButton>(R.id.btnTastierino)
+        val btnAltro = findViewById<ImageButton>(R.id.btnAltro)
 
         val call = MyInCallService.chiamataAttiva
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
@@ -51,7 +53,7 @@ class InCallActivity : AppCompatActivity() {
         call?.registerCallback(callback)
         call?.let { aggiornaStato(it.state) }
 
-        DialpadKeys.build(this, grid, keySizeDp = 56) { cifra ->
+        DialpadKeys.build(this, grid, keySizeDp = 52, stileScuro = true) { cifra ->
             digitato.append(cifra)
             txtDigitato.text = digitato.toString()
             val c = MyInCallService.chiamataAttiva
@@ -59,12 +61,15 @@ class InCallActivity : AppCompatActivity() {
             c?.stopDtmfTone()
         }
 
+        btnTastierino.setOnClickListener {
+            tastierinoVisibile = !tastierinoVisibile
+            grid.visibility = if (tastierinoVisibile) View.VISIBLE else View.GONE
+        }
+
         altoparlanteAttivo = audioManager.isSpeakerphoneOn
-        aggiornaAspettoAltoparlante(btnAltoparlante)
-        btnAltoparlante.setOnClickListener {
-            altoparlanteAttivo = !altoparlanteAttivo
-            audioManager.isSpeakerphoneOn = altoparlanteAttivo
-            aggiornaAspettoAltoparlante(btnAltoparlante)
+        aggiornaAspettoTelefono(btnTelefono)
+        btnTelefono.setOnClickListener {
+            mostraMenuAudio(btnTelefono)
         }
 
         aggiornaAspettoMuto(btnMuto)
@@ -82,18 +87,8 @@ class InCallActivity : AppCompatActivity() {
             aggiornaAspettoAttesa(btnAttesa)
         }
 
-        btnMessaggio.setOnClickListener {
-            if (numeroChiamante.isNotBlank()) {
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$numeroChiamante"))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-            }
-        }
-
-        btnAggiungiChiamata.setOnClickListener {
-            val intent = Intent(Intent.ACTION_DIAL)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
+        btnAltro.setOnClickListener {
+            mostraMenuAltro(btnAltro)
         }
 
         btnRiaggancia.setOnClickListener {
@@ -102,9 +97,58 @@ class InCallActivity : AppCompatActivity() {
         }
     }
 
-    private fun aggiornaAspettoAltoparlante(bottone: ImageButton) {
+    private fun mostraMenuAudio(ancora: View) {
+        val popup = PopupMenu(this, ancora)
+        popup.menu.add(0, 1, 0, "Telefono")
+        popup.menu.add(0, 2, 1, "Vivavoce")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> {
+                    altoparlanteAttivo = false
+                    audioManager.isSpeakerphoneOn = false
+                }
+                2 -> {
+                    altoparlanteAttivo = true
+                    audioManager.isSpeakerphoneOn = true
+                }
+            }
+            aggiornaAspettoTelefono(findViewById(R.id.btnTelefono))
+            true
+        }
+        popup.show()
+    }
+
+    private fun mostraMenuAltro(ancora: View) {
+        val popup = PopupMenu(this, ancora)
+        popup.menu.add(0, 1, 0, "Messaggio")
+        popup.menu.add(0, 2, 1, "Aggiungi chiamata")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> apriMessaggio()
+                2 -> apriAggiungiChiamata()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun apriMessaggio() {
+        if (numeroChiamante.isNotBlank()) {
+            val intent = Intent(this, ComponiSmsActivity::class.java)
+            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, numeroChiamante)
+            startActivity(intent)
+        }
+    }
+
+    private fun apriAggiungiChiamata() {
+        val intent = Intent(Intent.ACTION_DIAL)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+    }
+
+    private fun aggiornaAspettoTelefono(bottone: ImageButton) {
         bottone.setBackgroundResource(
-            if (altoparlanteAttivo) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
+            if (altoparlanteAttivo) R.drawable.bg_circle_end else R.drawable.bg_circle_call
         )
     }
 

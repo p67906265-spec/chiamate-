@@ -1,7 +1,6 @@
 package com.paolo.gestionechiamate
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.TextView
@@ -56,7 +55,8 @@ class ContattoDettaglioActivity : AppCompatActivity() {
         }
 
         findViewById<ImageButton>(R.id.btnMessaggio).setOnClickListener {
-            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$numero"))
+            val intent = Intent(this, ComponiSmsActivity::class.java)
+            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, numero)
             startActivity(intent)
         }
     }
