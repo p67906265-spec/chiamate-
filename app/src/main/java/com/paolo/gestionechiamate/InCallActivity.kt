@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.telecom.Call
 import android.view.View
 import android.widget.GridLayout
@@ -11,6 +12,10 @@ import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class InCallActivity : AppCompatActivity() {
 
@@ -23,6 +28,7 @@ class InCallActivity : AppCompatActivity() {
     private var attesaAttiva = false
     private var tastierinoVisibile = false
     private var numeroChiamante: String = ""
+    private val scope = CoroutineScope(Dispatchers.Main)
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -52,6 +58,15 @@ class InCallActivity : AppCompatActivity() {
         txtNumero.text = numeroChiamante
         call?.registerCallback(callback)
         call?.let { aggiornaStato(it.state) }
+
+        if (numeroChiamante.isNotBlank()) {
+            scope.launch {
+                val nome = withContext(Dispatchers.IO) { cercaNomeInRubrica(numeroChiamante) }
+                if (nome != null) {
+                    txtNumero.text = nome
+                }
+            }
+        }
 
         DialpadKeys.build(this, grid, keySizeDp = 52, stileScuro = true) { cifra ->
             digitato.append(cifra)
@@ -144,6 +159,35 @@ class InCallActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_DIAL)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+    }
+
+    private fun cercaNomeInRubrica(numero: String): String? {
+        val cifreNumero = soloCifre(numero)
+        val cursor = contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null, null, null
+        )
+        cursor?.use {
+            val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            while (it.moveToNext()) {
+                val numeroRubrica = if (idxNum >= 0) it.getString(idxNum) else null
+                if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
+                    return if (idxNome >= 0) it.getString(idxNome) else null
+                }
+            }
+        }
+        return null
+    }
+
+    private fun soloCifre(numero: String): String {
+        var cifre = numero.filter { it.isDigit() }
+        if (cifre.length > 10) cifre = cifre.takeLast(10)
+        return cifre
     }
 
     private fun aggiornaAspettoTelefono(bottone: ImageButton) {
