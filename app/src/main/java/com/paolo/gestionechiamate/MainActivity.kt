@@ -118,6 +118,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun richiediRuoloDialer() {
+        try {
+            val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+            startActivity(intent)
+            return
+        } catch (e: Exception) {
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val roleManager = getSystemService(RoleManager::class.java)
             if (roleManager == null) {
@@ -135,20 +143,13 @@ class MainActivity : AppCompatActivity() {
                 toastDialer("Gestione Chiamate è già l'app Telefono predefinita.")
                 return
             }
-            toastDialer("Apertura richiesta di sistema…")
             try {
                 startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER))
             } catch (e: Exception) {
                 toastDialer("Non è stato possibile aprire la richiesta: ${e.message}")
             }
         } else {
-            try {
-                val intent = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
-                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
-                startActivity(intent)
-            } catch (e: Exception) {
-                toastDialer("Non è stato possibile aprire la richiesta: ${e.message}")
-            }
+            toastDialer("Non è stato possibile aprire la richiesta su questo telefono.")
         }
     }
 

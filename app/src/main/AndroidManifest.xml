@@ -39,6 +39,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="tel" />
             </intent-filter>
         </activity>
@@ -71,7 +75,7 @@
             android:name=".InCallActivity"
             android:exported="false"
             android:launchMode="singleTask"
-            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
             android:theme="@style/Theme.GestioneChiamate.InCall" />
@@ -83,6 +87,9 @@
             <meta-data
                 android:name="android.telecom.IN_CALL_SERVICE_UI"
                 android:value="true" />
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_CAR_MODE_UI"
+                android:value="false" />
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
