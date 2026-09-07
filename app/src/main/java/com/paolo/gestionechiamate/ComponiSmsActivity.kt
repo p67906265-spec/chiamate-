@@ -2,6 +2,7 @@ package com.paolo.gestionechiamate
 
 import android.content.ContentValues
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.provider.Telephony
 import android.telephony.SmsManager
 import android.widget.EditText
@@ -40,6 +41,12 @@ class ComponiSmsActivity : AppCompatActivity() {
         if (!numeroDaIntent.isNullOrBlank()) {
             editNumero.setText(numeroDaIntent)
             caricaConversazione(numeroDaIntent)
+            scope.launch {
+                val nome = withContext(Dispatchers.IO) { cercaNomeInRubrica(numeroDaIntent) }
+                if (nome != null) {
+                    findViewById<Toolbar>(R.id.toolbar).title = nome
+                }
+            }
         }
 
         findViewById<ImageButton>(R.id.btnInvia).setOnClickListener {
@@ -58,6 +65,29 @@ class ComponiSmsActivity : AppCompatActivity() {
         var cifre = numero.filter { it.isDigit() }
         if (cifre.length > 10) cifre = cifre.takeLast(10)
         return cifre
+    }
+
+    private fun cercaNomeInRubrica(numero: String): String? {
+        val cifreNumero = soloCifre(numero)
+        val cursor = contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null, null, null
+        )
+        cursor?.use {
+            val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+            val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            while (it.moveToNext()) {
+                val numeroRubrica = if (idxNum >= 0) it.getString(idxNum) else null
+                if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
+                    return if (idxNome >= 0) it.getString(idxNome) else null
+                }
+            }
+        }
+        return null
     }
 
     private fun caricaConversazione(numero: String) {

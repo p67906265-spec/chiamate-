@@ -277,6 +277,7 @@ class ListaFragment : Fragment() {
 
     // ---------- SMS ----------
     private fun caricaSms(): List<Sms> {
+        val mappaRubrica = costruisciMappaRubrica()
         val lista = mutableListOf<Sms>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             Telephony.Sms.CONTENT_URI,
@@ -291,10 +292,11 @@ class ListaFragment : Fragment() {
             val idxData = it.getColumnIndex(Telephony.Sms.DATE)
             var count = 0
             while (it.moveToNext() && count < 200) {
-                val mittente = if (idxAddr >= 0) it.getString(idxAddr) else "?"
+                val numero = if (idxAddr >= 0) it.getString(idxAddr) else "?"
                 val corpo = if (idxBody >= 0) it.getString(idxBody) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
-                lista.add(Sms(mittente ?: "?", corpo ?: "", formato.format(Date(data))))
+                val nomeVisualizzato = mappaRubrica[normalizzaNumero(numero ?: "")] ?: numero ?: "?"
+                lista.add(Sms(nomeVisualizzato, numero ?: "?", corpo ?: "", formato.format(Date(data))))
                 count++
             }
         }
@@ -304,4 +306,4 @@ class ListaFragment : Fragment() {
 
 data class Contatto(val id: Long, val lookupKey: String?, val nome: String, val numero: String)
 data class VoceChiamata(val nome: String, val numero: String, val dataFormattata: String)
-data class Sms(val mittente: String, val corpo: String, val dataFormattata: String)
+data class Sms(val mittente: String, val numero: String, val corpo: String, val dataFormattata: String)

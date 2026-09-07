@@ -30,7 +30,7 @@ class SmsAdapter(private val dati: List<Sms>) :
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = android.content.Intent(context, ComponiSmsActivity::class.java)
-            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, sms.mittente)
+            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, sms.numero)
             context.startActivity(intent)
         }
     }
