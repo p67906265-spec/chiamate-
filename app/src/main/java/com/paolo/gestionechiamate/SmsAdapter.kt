@@ -26,6 +26,13 @@ class SmsAdapter(private val dati: List<Sms>) :
         holder.txtMittente.text = sms.mittente
         holder.txtCorpo.text = sms.corpo
         holder.txtData.text = sms.dataFormattata
+
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = android.content.Intent(context, ComponiSmsActivity::class.java)
+            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, sms.mittente)
+            context.startActivity(intent)
+        }
     }
 
     override fun getItemCount() = dati.size
