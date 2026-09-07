@@ -41,20 +41,14 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <GridLayout
-        android:id="@+id/gridTasti"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:columnCount="3"
-        android:rowCount="4"
-        android:visibility="gone" />
-
     <LinearLayout
+        android:id="@+id/layoutChiamataInArrivo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:visibility="gone">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -64,20 +58,20 @@
             android:gravity="center">
 
             <ImageButton
-                android:id="@+id/btnMuto"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/bg_dialpad_key"
-                android:src="@android:drawable/ic_btn_speak_now"
-                android:contentDescription="Disattiva audio" />
+                android:id="@+id/btnRifiuta"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/bg_circle_end"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:contentDescription="Rifiuta" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Disattiva audio"
-                android:textColor="#CCFFFFFF"
-                android:textSize="12sp" />
+                android:layout_marginTop="6dp"
+                android:text="Rifiuta"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
 
         </LinearLayout>
 
@@ -89,122 +83,197 @@
             android:gravity="center">
 
             <ImageButton
-                android:id="@+id/btnTastierino"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/bg_dialpad_key"
-                android:src="@drawable/ic_nav_tastierino"
-                android:contentDescription="Tastierino" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Tastierino"
-                android:textColor="#CCFFFFFF"
-                android:textSize="12sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <ImageButton
-                android:id="@+id/btnTelefono"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
+                android:id="@+id/btnRispondi"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
                 android:background="@drawable/bg_circle_call"
                 android:src="@android:drawable/ic_menu_call"
-                android:contentDescription="Telefono" />
+                android:contentDescription="Rispondi" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Telefono"
-                android:textColor="#CCFFFFFF"
-                android:textSize="12sp" />
+                android:layout_marginTop="6dp"
+                android:text="Rispondi"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
 
         </LinearLayout>
 
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/layoutChiamataAttiva"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="16dp"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:orientation="vertical">
+
+        <GridLayout
+            android:id="@+id/gridTasti"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:columnCount="3"
+            android:rowCount="4"
+            android:visibility="gone" />
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:gravity="center">
 
-            <ImageButton
-                android:id="@+id/btnAttesa"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/bg_dialpad_key"
-                android:src="@android:drawable/ic_media_pause"
-                android:contentDescription="In attesa" />
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="In attesa"
-                android:textColor="#CCFFFFFF"
-                android:textSize="12sp" />
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnMuto"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_dialpad_key"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    android:contentDescription="Disattiva audio" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Disattiva audio"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnTastierino"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_dialpad_key"
+                    android:src="@drawable/ic_nav_tastierino"
+                    android:contentDescription="Tastierino" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Tastierino"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnTelefono"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_circle_call"
+                    android:src="@android:drawable/ic_menu_call"
+                    android:contentDescription="Telefono" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Telefono"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal"
             android:gravity="center">
 
-            <ImageButton
-                android:id="@+id/btnRiaggancia"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:background="@drawable/bg_circle_end"
-                android:contentDescription="@string/riaggancia"
-                android:src="@android:drawable/ic_menu_close_clear_cancel" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <ImageButton
-                android:id="@+id/btnAltro"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/bg_dialpad_key"
-                android:src="@drawable/ic_altro"
-                android:contentDescription="Altro" />
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Altro"
-                android:textColor="#CCFFFFFF"
-                android:textSize="12sp" />
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnAttesa"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_dialpad_key"
+                    android:src="@android:drawable/ic_media_pause"
+                    android:contentDescription="In attesa" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="In attesa"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnRiaggancia"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:background="@drawable/bg_circle_end"
+                    android:contentDescription="@string/riaggancia"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnAltro"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_dialpad_key"
+                    android:src="@drawable/ic_altro"
+                    android:contentDescription="Altro" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Altro"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

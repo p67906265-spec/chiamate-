@@ -1,6 +1,9 @@
 package com.paolo.gestionechiamate
 
+import android.app.Activity
+import android.content.Intent
 import android.database.Cursor
+import android.net.Uri
 import android.os.Bundle
 import android.provider.CallLog
 import android.provider.ContactsContract
@@ -11,7 +14,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -41,6 +46,26 @@ class ListaFragment : Fragment() {
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var contattiCompleti: List<Contatto> = emptyList()
+
+    private val sceltaContattoSms = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { risultato ->
+        if (risultato.resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = risultato.data?.data
+            if (uri != null) {
+                val cursor = requireContext().contentResolver.query(uri, null, null, null, null)
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                        val numero = if (idxNum >= 0) it.getString(idxNum) else null
+                        if (!numero.isNullOrBlank()) {
+                            apriConversazione(numero)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -78,6 +103,14 @@ class ListaFragment : Fragment() {
             })
         }
 
+        if (tipo == TIPO_SMS) {
+            val btnNuovoMessaggio = view.findViewById<ImageButton>(R.id.btnNuovoMessaggio)
+            btnNuovoMessaggio.visibility = View.VISIBLE
+            btnNuovoMessaggio.setOnClickListener {
+                mostraSceltaNuovoMessaggio()
+            }
+        }
+
         if (!Permessi.tuttiConcessi(requireContext())) {
             txtVuoto.visibility = View.VISIBLE
             recycler.visibility = View.GONE
@@ -103,7 +136,7 @@ class ListaFragment : Fragment() {
                 recycler.adapter = when (tipo) {
                     TIPO_RUBRICA -> ContattoAdapter(dati as List<Contatto>)
                     TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
-                    else -> SmsAdapter(dati as List<Sms>)
+                    else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
                 }
             }
         }
@@ -124,6 +157,43 @@ class ListaFragment : Fragment() {
 
     private fun vaiAllaPagina(posizione: Int) {
         requireActivity().findViewById<ViewPager2>(R.id.viewPager).currentItem = posizione
+    }
+
+    private fun mostraSceltaNuovoMessaggio() {
+        val opzioni = arrayOf("Scegli da rubrica", "Nuovo numero")
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Nuovo messaggio")
+            .setItems(opzioni) { _, which ->
+                if (which == 0) {
+                    val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                    sceltaContattoSms.launch(intent)
+                } else {
+                    apriConversazione(null)
+                }
+            }
+            .show()
+    }
+
+    private fun apriConversazione(numero: String?) {
+        val intent = Intent(requireContext(), ComponiSmsActivity::class.java)
+        if (!numero.isNullOrBlank()) {
+            intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, numero)
+        }
+        startActivity(intent)
+    }
+
+    private fun ricaricaSms(recycler: RecyclerView, txtVuoto: TextView) {
+        scope.launch {
+            val dati = withContext(Dispatchers.IO) { caricaSms() }
+            if (dati.isEmpty()) {
+                txtVuoto.visibility = View.VISIBLE
+                recycler.visibility = View.GONE
+            } else {
+                txtVuoto.visibility = View.GONE
+                recycler.visibility = View.VISIBLE
+                recycler.adapter = SmsAdapter(dati) { ricaricaSms(recycler, txtVuoto) }
+            }
+        }
     }
 
     private fun mostraDialogTastierino() {

@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.telecom.Call
+import android.telecom.VideoProfile
 import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
@@ -23,6 +24,8 @@ class InCallActivity : AppCompatActivity() {
     private lateinit var txtDigitato: TextView
     private lateinit var txtNumero: TextView
     private lateinit var audioManager: AudioManager
+    private lateinit var layoutChiamataInArrivo: View
+    private lateinit var layoutChiamataAttiva: View
     private var altoparlanteAttivo = false
     private var mutoAttivo = false
     private var attesaAttiva = false
@@ -33,6 +36,7 @@ class InCallActivity : AppCompatActivity() {
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
             aggiornaStato(state)
+            aggiornaVisibilitaControlli(state)
             if (state == Call.STATE_DISCONNECTED) finish()
         }
     }
@@ -45,6 +49,8 @@ class InCallActivity : AppCompatActivity() {
 
         txtDigitato = findViewById(R.id.txtDigitato)
         txtNumero = findViewById(R.id.txtNumeroChiamante)
+        layoutChiamataInArrivo = findViewById(R.id.layoutChiamataInArrivo)
+        layoutChiamataAttiva = findViewById(R.id.layoutChiamataAttiva)
         val grid = findViewById<GridLayout>(R.id.gridTasti)
         val btnRiaggancia = findViewById<ImageButton>(R.id.btnRiaggancia)
         val btnTelefono = findViewById<ImageButton>(R.id.btnTelefono)
@@ -52,12 +58,17 @@ class InCallActivity : AppCompatActivity() {
         val btnAttesa = findViewById<ImageButton>(R.id.btnAttesa)
         val btnTastierino = findViewById<ImageButton>(R.id.btnTastierino)
         val btnAltro = findViewById<ImageButton>(R.id.btnAltro)
+        val btnRispondi = findViewById<ImageButton>(R.id.btnRispondi)
+        val btnRifiuta = findViewById<ImageButton>(R.id.btnRifiuta)
 
         val call = MyInCallService.chiamataAttiva
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
         txtNumero.text = numeroChiamante
         call?.registerCallback(callback)
-        call?.let { aggiornaStato(it.state) }
+        call?.let {
+            aggiornaStato(it.state)
+            aggiornaVisibilitaControlli(it.state)
+        }
 
         if (numeroChiamante.isNotBlank()) {
             scope.launch {
@@ -66,6 +77,15 @@ class InCallActivity : AppCompatActivity() {
                     txtNumero.text = nome
                 }
             }
+        }
+
+        btnRispondi.setOnClickListener {
+            MyInCallService.chiamataAttiva?.answer(VideoProfile.STATE_AUDIO_ONLY)
+        }
+
+        btnRifiuta.setOnClickListener {
+            MyInCallService.chiamataAttiva?.reject(false, null)
+            finish()
         }
 
         DialpadKeys.build(this, grid, keySizeDp = 52, stileScuro = true) { cifra ->
@@ -109,6 +129,16 @@ class InCallActivity : AppCompatActivity() {
         btnRiaggancia.setOnClickListener {
             MyInCallService.chiamataAttiva?.disconnect()
             finish()
+        }
+    }
+
+    private fun aggiornaVisibilitaControlli(state: Int) {
+        if (state == Call.STATE_RINGING) {
+            layoutChiamataInArrivo.visibility = View.VISIBLE
+            layoutChiamataAttiva.visibility = View.GONE
+        } else {
+            layoutChiamataInArrivo.visibility = View.GONE
+            layoutChiamataAttiva.visibility = View.VISIBLE
         }
     }
 

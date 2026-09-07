@@ -11,8 +11,8 @@ android {
         applicationId "com.paolo.gestionechiamate"
         minSdk 24
         targetSdk 34
-        versionCode 9
-        versionName "1.8"
+        versionCode 10
+        versionName "1.9"
     }
 
     // Chiave di firma fissa: senza questa, ogni build su GitHub Actions genera

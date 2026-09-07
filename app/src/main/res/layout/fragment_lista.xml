@@ -109,4 +109,15 @@
 
     </LinearLayout>
 
+    <ImageButton
+        android:id="@+id/btnNuovoMessaggio"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        android:background="@drawable/bg_fab_tastierino"
+        android:src="@drawable/ic_plus"
+        android:contentDescription="Nuovo messaggio"
+        android:visibility="gone" />
+
 </FrameLayout>
