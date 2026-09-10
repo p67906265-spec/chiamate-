@@ -26,8 +26,17 @@
             android:padding="20dp">
 
             <TextView
+                android:id="@+id/headerTema"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_favorite_slot"
+                android:clickable="true"
+                android:drawableEnd="@drawable/ic_expand_more"
+                android:drawableTint="@color/primary"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:text="Tema"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
@@ -39,6 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_favorite_slot"
+                android:visibility="gone"
                 android:padding="8dp">
 
                 <RadioButton
@@ -68,10 +78,19 @@
             </RadioGroup>
 
             <TextView
+                android:id="@+id/headerColore"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Colore del testo"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_favorite_slot"
+                android:clickable="true"
+                android:drawableEnd="@drawable/ic_expand_more"
+                android:drawableTint="@color/primary"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="Colore"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 android:textSize="16sp" />
@@ -81,24 +100,36 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:visibility="gone"
                 android:text="Scegli colore del testo"
                 app:icon="@android:drawable/ic_menu_edit" />
 
             <TextView
+                android:id="@+id/headerGestione"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_favorite_slot"
+                android:clickable="true"
+                android:drawableEnd="@drawable/ic_expand_more"
+                android:drawableTint="@color/primary"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:text="Gestione chiamate"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 android:textSize="16sp" />
 
             <LinearLayout
+                android:id="@+id/contenutoGestione"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="vertical"
                 android:background="@drawable/bg_favorite_slot"
+                android:visibility="gone"
                 android:padding="12dp">
 
                 <LinearLayout
@@ -169,22 +200,38 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/headerBlocco"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_favorite_slot"
+                android:clickable="true"
+                android:drawableEnd="@drawable/ic_expand_more"
+                android:drawableTint="@color/primary"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:text="Blocco chiamate"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 android:textSize="16sp" />
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/contenutoBlocco"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="8dp"
-                android:text="Le chiamate in arrivo che rientrano nei filtri attivi verranno rifiutate automaticamente."
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Le chiamate in arrivo che rientrano nei filtri attivi verranno rifiutate automaticamente."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -336,6 +383,8 @@
                 android:layout_marginTop="8dp"
                 android:text="Attiva il filtro chiamate" />
 
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/txtVersione"
                 android:layout_width="match_parent"
@@ -344,6 +393,18 @@
                 android:gravity="center"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/txtFirma"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center"
+                android:text="Paolo Free 1.0"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
         </LinearLayout>
 

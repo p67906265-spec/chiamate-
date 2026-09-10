@@ -21,6 +21,7 @@ object DialpadKeys {
         keySizeDp: Int = 64,
         textSizeSp: Float = 22f,
         stileScuro: Boolean = false,
+        usaColoreTema: Boolean = false,
         onKeyPressed: (String) -> Unit
     ) {
         grid.removeAllViews()
@@ -35,7 +36,10 @@ object DialpadKeys {
                 text = if (letters.isEmpty()) digit else "$digit\n$letters"
                 gravity = Gravity.CENTER
                 textSize = if (letters.isEmpty()) textSizeSp else textSizeSp * 0.7f
-                if (stileScuro) {
+                if (usaColoreTema) {
+                    setTextColor(Color.WHITE)
+                    setBackgroundResource(R.drawable.bg_circle_primary)
+                } else if (stileScuro) {
                     setTextColor(Color.WHITE)
                     setBackgroundResource(R.drawable.bg_dialpad_key_scuro)
                 } else {

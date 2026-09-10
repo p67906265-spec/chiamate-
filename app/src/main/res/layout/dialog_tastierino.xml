@@ -23,7 +23,7 @@
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="14dp"
-            android:background="#555555" />
+            android:background="@color/primary" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -35,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary"
                 android:textSize="26sp"
                 android:textStyle="bold"
                 android:minHeight="40dp" />
@@ -47,6 +47,7 @@
                 android:layout_gravity="end|center_vertical"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_input_delete"
+                android:tint="@color/primary"
                 android:contentDescription="@string/riaggancia"
                 android:visibility="invisible" />
 
@@ -66,8 +67,9 @@
             android:layout_height="64dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_circle_call"
+            android:background="@drawable/bg_circle_primary"
             android:src="@android:drawable/ic_menu_call"
+            android:tint="@color/white"
             android:contentDescription="@string/chiama" />
 
     </LinearLayout>

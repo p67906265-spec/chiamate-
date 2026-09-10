@@ -320,7 +320,7 @@ class ListaFragment : Fragment() {
             btnBackspace.visibility = if (numero.isNotEmpty()) View.VISIBLE else View.INVISIBLE
         }
 
-        DialpadKeys.build(requireContext(), grid, keySizeDp = 60, stileScuro = true) { cifra ->
+        DialpadKeys.build(requireContext(), grid, keySizeDp = 60, usaColoreTema = true) { cifra ->
             numero.append(cifra)
             aggiornaDisplay()
         }

@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
+import android.view.View
 import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.LinearLayout
@@ -26,6 +27,11 @@ class ImpostazioniActivity : AppCompatActivity() {
         setContentView(R.layout.activity_impostazioni)
 
         findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+
+        configuraTendina(R.id.headerTema, R.id.gruppoTema)
+        configuraTendina(R.id.headerColore, R.id.btnColoreTesto)
+        configuraTendina(R.id.headerGestione, R.id.contenutoGestione)
+        configuraTendina(R.id.headerBlocco, R.id.contenutoBlocco)
 
         try {
             val versione = packageManager.getPackageInfo(packageName, 0).versionName
@@ -311,6 +317,23 @@ class ImpostazioniActivity : AppCompatActivity() {
             (resources.displayMetrics.widthPixels * 0.92f).toInt(),
             android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
+    }
+
+    private fun configuraTendina(headerId: Int, contenutoId: Int) {
+        val header = findViewById<TextView>(headerId)
+        val contenuto = findViewById<View>(contenutoId)
+        contenuto.visibility = View.GONE
+        header.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_expand_more, 0)
+        header.setOnClickListener {
+            val apri = contenuto.visibility != View.VISIBLE
+            contenuto.visibility = if (apri) View.VISIBLE else View.GONE
+            header.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                0,
+                0,
+                if (apri) R.drawable.ic_expand_less else R.drawable.ic_expand_more,
+                0
+            )
+        }
     }
 
     private fun dp(valore: Int) = (valore * resources.displayMetrics.density).toInt()
