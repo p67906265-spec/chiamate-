@@ -18,10 +18,10 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,8 +44,14 @@ class ListaFragment : Fragment() {
         }
     }
 
-    private val scope = CoroutineScope(Dispatchers.Main)
     private var contattiCompleti: List<Contatto> = emptyList()
+    private var tipoPagina: Int = TIPO_RUBRICA
+    private var recyclerPagina: RecyclerView? = null
+    private var testoVuotoPagina: TextView? = null
+
+    private val creaContatto = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { caricaPagina() }
 
     private val sceltaContattoSms = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -72,8 +78,11 @@ class ListaFragment : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.fragment_lista, container, false)
         val tipo = arguments?.getInt(ARG_TIPO) ?: TIPO_RUBRICA
+        tipoPagina = tipo
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerView)
         val txtVuoto = view.findViewById<TextView>(R.id.txtVuoto)
+        recyclerPagina = recycler
+        testoVuotoPagina = txtVuoto
         val barraScorciatoie = view.findViewById<View>(R.id.barraScorciatoie)
         val barraRicerca = view.findViewById<View>(R.id.barraRicerca)
         recycler.layoutManager = LinearLayoutManager(requireContext())
@@ -93,6 +102,14 @@ class ListaFragment : Fragment() {
 
         if (tipo == TIPO_RUBRICA) {
             barraRicerca.visibility = View.VISIBLE
+            view.findViewById<ImageButton>(R.id.btnNuovoContatto).apply {
+                visibility = View.VISIBLE
+                setOnClickListener {
+                    creaContatto.launch(
+                        Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI)
+                    )
+                }
+            }
             val editCerca = view.findViewById<EditText>(R.id.editCerca)
             editCerca.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -111,37 +128,60 @@ class ListaFragment : Fragment() {
             }
         }
 
+        return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        caricaPagina()
+    }
+
+    override fun onDestroyView() {
+        recyclerPagina = null
+        testoVuotoPagina = null
+        super.onDestroyView()
+    }
+
+    private fun caricaPagina() {
+        val recycler = recyclerPagina ?: return
+        val txtVuoto = testoVuotoPagina ?: return
         if (!Permessi.tuttiConcessi(requireContext())) {
+            txtVuoto.text = getString(R.string.permessi_necessari)
             txtVuoto.visibility = View.VISIBLE
             recycler.visibility = View.GONE
-            return view
+            return
         }
 
-        scope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val dati = withContext(Dispatchers.IO) {
-                when (tipo) {
+                when (tipoPagina) {
                     TIPO_RUBRICA -> caricaContatti()
                     TIPO_CHIAMATE -> caricaChiamate()
                     else -> caricaSms()
                 }
             }
             if (dati.isEmpty()) {
+                txtVuoto.text = when (tipoPagina) {
+                    TIPO_RUBRICA -> "Nessun contatto"
+                    TIPO_CHIAMATE -> "Nessuna chiamata"
+                    else -> "Nessun messaggio"
+                }
                 txtVuoto.visibility = View.VISIBLE
                 recycler.visibility = View.GONE
             } else {
-                if (tipo == TIPO_RUBRICA) {
+                txtVuoto.visibility = View.GONE
+                recycler.visibility = View.VISIBLE
+                if (tipoPagina == TIPO_RUBRICA) {
                     @Suppress("UNCHECKED_CAST")
                     contattiCompleti = dati as List<Contatto>
                 }
-                recycler.adapter = when (tipo) {
+                recycler.adapter = when (tipoPagina) {
                     TIPO_RUBRICA -> ContattoAdapter(dati as List<Contatto>)
                     TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
                     else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
                 }
             }
         }
-
-        return view
     }
 
     private fun filtraContatti(recycler: RecyclerView, testo: String) {
@@ -149,7 +189,8 @@ class ListaFragment : Fragment() {
             contattiCompleti
         } else {
             contattiCompleti.filter {
-                it.nome.contains(testo, ignoreCase = true) || it.numero.contains(testo)
+                it.nome.contains(testo, ignoreCase = true) ||
+                    it.numeri.any { numero -> numero.numero.contains(testo) }
             }
         }
         recycler.adapter = ContattoAdapter(filtrati)
@@ -183,7 +224,7 @@ class ListaFragment : Fragment() {
     }
 
     private fun ricaricaSms(recycler: RecyclerView, txtVuoto: TextView) {
-        scope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val dati = withContext(Dispatchers.IO) { caricaSms() }
             if (dati.isEmpty()) {
                 txtVuoto.visibility = View.VISIBLE
@@ -247,14 +288,16 @@ class ListaFragment : Fragment() {
 
     // ---------- Rubrica ----------
     private fun caricaContatti(): List<Contatto> {
-        val lista = mutableListOf<Contatto>()
+        val contatti = linkedMapOf<Long, Contatto>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(
                 ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
                 ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY,
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.TYPE,
+                ContactsContract.CommonDataKinds.Phone.LABEL
             ),
             null, null,
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
@@ -264,15 +307,30 @@ class ListaFragment : Fragment() {
             val idxLookup = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY)
             val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
             val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val idxTipo = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE)
+            val idxEtichetta = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.LABEL)
             while (it.moveToNext()) {
                 val id = if (idxId >= 0) it.getLong(idxId) else 0L
                 val lookup = if (idxLookup >= 0) it.getString(idxLookup) else null
                 val nome = if (idxNome >= 0) it.getString(idxNome) else null
                 val numero = if (idxNum >= 0) it.getString(idxNum) else null
-                if (!numero.isNullOrBlank()) lista.add(Contatto(id, lookup, nome ?: numero, numero))
+                val tipo = if (idxTipo >= 0) it.getInt(idxTipo) else ContactsContract.CommonDataKinds.Phone.TYPE_OTHER
+                val etichettaPersonalizzata = if (idxEtichetta >= 0) it.getString(idxEtichetta) else null
+                if (!numero.isNullOrBlank()) {
+                    val etichetta = ContactsContract.CommonDataKinds.Phone.getTypeLabel(
+                        resources, tipo, etichettaPersonalizzata
+                    ).toString()
+                    val esistente = contatti[id]
+                    val voceNumero = NumeroContatto(numero, etichetta)
+                    if (esistente == null) {
+                        contatti[id] = Contatto(id, lookup, nome ?: numero, listOf(voceNumero))
+                    } else if (esistente.numeri.none { n -> normalizzaNumero(n.numero) == normalizzaNumero(numero) }) {
+                        contatti[id] = esistente.copy(numeri = esistente.numeri + voceNumero)
+                    }
+                }
             }
         }
-        return lista.distinctBy { normalizzaNumero(it.numero) }
+        return contatti.values.toList()
     }
 
     private fun normalizzaNumero(numero: String): String {
@@ -296,11 +354,13 @@ class ListaFragment : Fragment() {
             val idxNome = it.getColumnIndex(CallLog.Calls.CACHED_NAME)
             val idxNum = it.getColumnIndex(CallLog.Calls.NUMBER)
             val idxData = it.getColumnIndex(CallLog.Calls.DATE)
+            val idxTipo = it.getColumnIndex(CallLog.Calls.TYPE)
             var count = 0
             while (it.moveToNext() && count < 200) {
                 val nomeCache = if (idxNome >= 0) it.getString(idxNome) else null
                 val numeroGrezzo = if (idxNum >= 0) it.getString(idxNum) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
+                val tipoChiamata = if (idxTipo >= 0) it.getInt(idxTipo) else CallLog.Calls.INCOMING_TYPE
 
                 val numeroVisualizzato = when (numeroGrezzo) {
                     "-1" -> "Numero sconosciuto"
@@ -314,7 +374,13 @@ class ListaFragment : Fragment() {
                     ?: nomeCache?.takeIf { it.isNotBlank() }
                     ?: numeroVisualizzato
 
-                lista.add(VoceChiamata(nome, numeroGrezzo, formato.format(Date(data))))
+                val nuova = VoceChiamata(nome, numeroGrezzo, formato.format(Date(data)), tipoChiamata)
+                val precedente = lista.lastOrNull()
+                if (precedente != null && normalizzaNumero(precedente.numero) == normalizzaNumero(numeroGrezzo)) {
+                    lista[lista.lastIndex] = precedente.copy(conteggio = precedente.conteggio + 1)
+                } else {
+                    lista.add(nuova)
+                }
                 count++
             }
         }
@@ -374,6 +440,20 @@ class ListaFragment : Fragment() {
     }
 }
 
-data class Contatto(val id: Long, val lookupKey: String?, val nome: String, val numero: String)
-data class VoceChiamata(val nome: String, val numero: String, val dataFormattata: String)
+data class NumeroContatto(val numero: String, val etichetta: String)
+data class Contatto(
+    val id: Long,
+    val lookupKey: String?,
+    val nome: String,
+    val numeri: List<NumeroContatto>
+) {
+    val numero: String get() = numeri.firstOrNull()?.numero.orEmpty()
+}
+data class VoceChiamata(
+    val nome: String,
+    val numero: String,
+    val dataFormattata: String,
+    val tipo: Int,
+    val conteggio: Int = 1
+)
 data class Sms(val mittente: String, val numero: String, val corpo: String, val dataFormattata: String)

@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import android.provider.CallLog
 import androidx.recyclerview.widget.RecyclerView
 
 class ChiamataAdapter(private val dati: List<VoceChiamata>) :
@@ -24,8 +25,23 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val voce = dati[position]
-        holder.txtNome.text = voce.nome
-        holder.txtData.text = voce.dataFormattata
+        holder.txtNome.text = if (voce.conteggio > 1) "${voce.nome} (${voce.conteggio})" else voce.nome
+        val tipo = when (voce.tipo) {
+            CallLog.Calls.OUTGOING_TYPE -> "Effettuata"
+            CallLog.Calls.MISSED_TYPE -> "Persa"
+            CallLog.Calls.REJECTED_TYPE -> "Rifiutata"
+            CallLog.Calls.BLOCKED_TYPE -> "Bloccata"
+            else -> "Ricevuta"
+        }
+        holder.txtData.text = "$tipo  •  ${voce.dataFormattata}\n${voce.numeroVisualizzabile()}"
+        holder.txtData.setTextColor(
+            androidx.core.content.ContextCompat.getColor(
+                holder.itemView.context,
+                if (voce.tipo == CallLog.Calls.MISSED_TYPE) R.color.end_call else R.color.text_secondary
+            )
+        )
+        val richiamabile = voce.numero.isNotBlank() && !voce.numero.startsWith("-")
+        holder.btnChiama.visibility = if (richiamabile) View.VISIBLE else View.INVISIBLE
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, voce.numero)
         }
@@ -39,4 +55,9 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
     }
 
     override fun getItemCount() = dati.size
+
+    private fun VoceChiamata.numeroVisualizzabile(): String = when (numero) {
+        "-1", "-2", "-3", "" -> "Numero non disponibile"
+        else -> numero
+    }
 }

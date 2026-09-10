@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.VideoProfile
@@ -13,7 +15,7 @@ import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,6 +25,7 @@ class InCallActivity : AppCompatActivity() {
     private val digitato = StringBuilder()
     private lateinit var txtDigitato: TextView
     private lateinit var txtNumero: TextView
+    private lateinit var txtNome: TextView
     private lateinit var audioManager: AudioManager
     private lateinit var layoutChiamataInArrivo: View
     private lateinit var layoutChiamataAttiva: View
@@ -31,7 +34,22 @@ class InCallActivity : AppCompatActivity() {
     private var attesaAttiva = false
     private var tastierinoVisibile = false
     private var numeroChiamante: String = ""
-    private val scope = CoroutineScope(Dispatchers.Main)
+    private val timerHandler = Handler(Looper.getMainLooper())
+    private val aggiornaDurata = object : Runnable {
+        override fun run() {
+            val call = MyInCallService.chiamataAttiva
+            if (call?.state == Call.STATE_ACTIVE) {
+                val inizio = call.details.connectTimeMillis
+                if (inizio > 0L) {
+                    val totale = ((System.currentTimeMillis() - inizio) / 1000).coerceAtLeast(0)
+                    findViewById<TextView>(R.id.txtStato).text = String.format(
+                        java.util.Locale.ITALY, "In chiamata  %02d:%02d", totale / 60, totale % 60
+                    )
+                }
+            }
+            timerHandler.postDelayed(this, 1000)
+        }
+    }
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call, state: Int) {
@@ -48,6 +66,7 @@ class InCallActivity : AppCompatActivity() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         txtDigitato = findViewById(R.id.txtDigitato)
+        txtNome = findViewById(R.id.txtNomeChiamante)
         txtNumero = findViewById(R.id.txtNumeroChiamante)
         layoutChiamataInArrivo = findViewById(R.id.layoutChiamataInArrivo)
         layoutChiamataAttiva = findViewById(R.id.layoutChiamataAttiva)
@@ -64,6 +83,7 @@ class InCallActivity : AppCompatActivity() {
         val call = MyInCallService.chiamataAttiva
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
         txtNumero.text = numeroChiamante
+        txtNome.text = numeroChiamante
         call?.registerCallback(callback)
         call?.let {
             aggiornaStato(it.state)
@@ -71,10 +91,10 @@ class InCallActivity : AppCompatActivity() {
         }
 
         if (numeroChiamante.isNotBlank()) {
-            scope.launch {
+            lifecycleScope.launch {
                 val nome = withContext(Dispatchers.IO) { cercaNomeInRubrica(numeroChiamante) }
                 if (nome != null) {
-                    txtNumero.text = nome
+                    txtNome.text = nome
                 }
             }
         }
@@ -99,6 +119,9 @@ class InCallActivity : AppCompatActivity() {
         btnTastierino.setOnClickListener {
             tastierinoVisibile = !tastierinoVisibile
             grid.visibility = if (tastierinoVisibile) View.VISIBLE else View.GONE
+            btnTastierino.setBackgroundResource(
+                if (tastierinoVisibile) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
+            )
         }
 
         altoparlanteAttivo = audioManager.isSpeakerphoneOn
@@ -130,6 +153,7 @@ class InCallActivity : AppCompatActivity() {
             MyInCallService.chiamataAttiva?.disconnect()
             finish()
         }
+        timerHandler.post(aggiornaDurata)
     }
 
     private fun aggiornaVisibilitaControlli(state: Int) {
@@ -253,6 +277,7 @@ class InCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        timerHandler.removeCallbacks(aggiornaDurata)
         MyInCallService.chiamataAttiva?.unregisterCallback(callback)
     }
 }

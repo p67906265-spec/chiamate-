@@ -15,14 +15,14 @@
         app:titleTextColor="@color/white">
 
         <ImageButton
-            android:id="@+id/btnModifica"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:id="@+id/btnAzioni"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="end|center_vertical"
             android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_edit"
-            android:contentDescription="Modifica"
+            android:src="@drawable/ic_altro"
+            android:contentDescription="Azioni contatto"
             android:tint="@color/white" />
 
     </androidx.appcompat.widget.Toolbar>
@@ -72,84 +72,16 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:orientation="horizontal"
-                android:gravity="center">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageButton
-                        android:id="@+id/btnChiama"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_circle_call"
-                        android:src="@android:drawable/ic_menu_call"
-                        android:contentDescription="@string/chiama" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="@string/chiama"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <ImageButton
-                        android:id="@+id/btnMessaggio"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_circle_call"
-                        android:src="@android:drawable/ic_dialog_email"
-                        android:contentDescription="Messaggio" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Messaggio"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="36dp"
                 android:orientation="vertical"
                 android:background="@drawable/bg_favorite_slot"
                 android:padding="18dp">
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/contenitoreNumeri"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Numero di telefono"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/txtNumeroDettaglio"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp" />
+                    android:orientation="vertical" />
 
             </LinearLayout>
 

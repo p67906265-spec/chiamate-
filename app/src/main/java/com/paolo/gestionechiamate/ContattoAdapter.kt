@@ -26,7 +26,11 @@ class ContattoAdapter(private val dati: List<Contatto>) :
         val contatto = dati[position]
         holder.txtIniziale.text = contatto.nome.take(1).uppercase()
         holder.txtNome.text = contatto.nome
-        holder.txtNumero.text = contatto.numero
+        holder.txtNumero.text = if (contatto.numeri.size == 1) {
+            contatto.numero
+        } else {
+            "${contatto.numero}  •  ${contatto.numeri.size} numeri"
+        }
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, contatto.numero)
         }
@@ -35,8 +39,6 @@ class ContattoAdapter(private val dati: List<Contatto>) :
             val intent = android.content.Intent(context, ContattoDettaglioActivity::class.java)
             intent.putExtra(ContattoDettaglioActivity.EXTRA_ID, contatto.id)
             intent.putExtra(ContattoDettaglioActivity.EXTRA_LOOKUP, contatto.lookupKey)
-            intent.putExtra(ContattoDettaglioActivity.EXTRA_NOME, contatto.nome)
-            intent.putExtra(ContattoDettaglioActivity.EXTRA_NUMERO, contatto.numero)
             context.startActivity(intent)
         }
     }

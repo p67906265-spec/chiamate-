@@ -7,9 +7,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,8 +23,6 @@ class DettaglioChiamateActivity : AppCompatActivity() {
         const val EXTRA_NUMERO = "numero"
         const val EXTRA_NOME = "nome"
     }
-
-    private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +47,7 @@ class DettaglioChiamateActivity : AppCompatActivity() {
             ChiamaHelper.chiama(this, numero)
         }
 
-        scope.launch {
+        lifecycleScope.launch {
             val nomeRubrica = withContext(Dispatchers.IO) { cercaNomeInRubrica(numero) }
             if (nomeRubrica != null) {
                 txtNome.text = nomeRubrica

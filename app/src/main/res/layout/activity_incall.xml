@@ -17,7 +17,7 @@
         android:textSize="14sp" />
 
     <TextView
-        android:id="@+id/txtNumeroChiamante"
+        android:id="@+id/txtNomeChiamante"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -25,6 +25,15 @@
         android:textColor="@color/white"
         android:textSize="28sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtNumeroChiamante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:gravity="center"
+        android:textColor="#CCFFFFFF"
+        android:textSize="17sp" />
 
     <TextView
         android:id="@+id/txtDigitato"
