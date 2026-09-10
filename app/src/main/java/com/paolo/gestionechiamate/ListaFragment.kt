@@ -94,6 +94,14 @@ class ListaFragment : Fragment() {
 
         if (tipo == TIPO_CHIAMATE) {
             barraScorciatoie.visibility = View.VISIBLE
+            val spazioScorciatoie = (96 * resources.displayMetrics.density).toInt()
+            recycler.setPadding(
+                recycler.paddingLeft,
+                recycler.paddingTop,
+                recycler.paddingRight,
+                spazioScorciatoie
+            )
+            recycler.clipToPadding = false
             view.findViewById<View>(R.id.btnScorciatoiaPreferiti).setOnClickListener {
                 vaiAllaPagina(3)
             }

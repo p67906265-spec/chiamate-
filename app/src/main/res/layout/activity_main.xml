@@ -31,7 +31,7 @@
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/card"
+        android:background="@color/bottom_nav_background"
         app:itemIconTint="@color/selector_nav_colore"
         app:itemTextColor="@color/selector_nav_colore"
         app:itemBackground="@drawable/selector_nav_item"

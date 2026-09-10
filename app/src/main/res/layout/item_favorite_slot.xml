@@ -12,7 +12,7 @@
         android:id="@+id/contenitoreFoto"
         android:layout_width="56dp"
         android:layout_height="56dp"
-        android:background="@drawable/bg_circle_call"
+        android:background="@drawable/bg_circle_primary"
         android:clipToOutline="true">
 
         <ImageView
