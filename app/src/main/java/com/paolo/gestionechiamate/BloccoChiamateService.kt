@@ -22,6 +22,9 @@ class BloccoChiamateService : CallScreeningService() {
         }
 
         if (!daBloccare && !nascosto && numero != null) {
+            if (Impostazioni.numeroConPrefissoBloccato(this, numero)) {
+                daBloccare = true
+            }
             if (Impostazioni.isBloccoNumeriStranieri(this) && isNumeroStraniero(numero)) {
                 daBloccare = true
             }

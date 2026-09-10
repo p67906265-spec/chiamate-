@@ -1,12 +1,15 @@
 package com.paolo.gestionechiamate
 
 import android.app.role.RoleManager
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.widget.EditText
+import android.widget.Button
+import android.widget.ScrollView
 import android.widget.RadioGroup
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -66,10 +69,12 @@ class ImpostazioniActivity : AppCompatActivity() {
         val switchNascosti = findViewById<Switch>(R.id.switchNascosti)
         val switchStranieri = findViewById<Switch>(R.id.switchStranieri)
         val switchNonInRubrica = findViewById<Switch>(R.id.switchNonInRubrica)
+        val switchPrefissi = findViewById<Switch>(R.id.switchPrefissi)
 
         switchNascosti.isChecked = Impostazioni.isBloccoNumeriNascosti(this)
         switchStranieri.isChecked = Impostazioni.isBloccoNumeriStranieri(this)
         switchNonInRubrica.isChecked = Impostazioni.isBloccoNonInRubrica(this)
+        switchPrefissi.isChecked = Impostazioni.isBloccoPrefissiAttivo(this)
 
         switchNascosti.setOnCheckedChangeListener { _, checked ->
             Impostazioni.setBloccoNumeriNascosti(this, checked)
@@ -79,6 +84,13 @@ class ImpostazioniActivity : AppCompatActivity() {
         }
         switchNonInRubrica.setOnCheckedChangeListener { _, checked ->
             Impostazioni.setBloccoNonInRubrica(this, checked)
+        }
+        switchPrefissi.setOnCheckedChangeListener { _, checked ->
+            Impostazioni.setBloccoPrefissiAttivo(this, checked)
+        }
+        aggiornaPulsantePrefissi()
+        findViewById<MaterialButton>(R.id.btnGestisciPrefissi).setOnClickListener {
+            mostraGestionePrefissi()
         }
 
         aggiornaStatoFiltro()
@@ -159,6 +171,112 @@ class ImpostazioniActivity : AppCompatActivity() {
             "Non è stato possibile aprire le impostazioni per il filtro chiamate su questo telefono.",
             android.widget.Toast.LENGTH_LONG
         ).show()
+    }
+
+    private fun aggiornaPulsantePrefissi() {
+        val quanti = Impostazioni.getPrefissiBloccati(this).size
+        findViewById<MaterialButton>(R.id.btnGestisciPrefissi).text = "Gestisci prefissi ($quanti)"
+    }
+
+    private fun mostraGestionePrefissi() {
+        val contenitore = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+        }
+        val spiegazione = TextView(this).apply {
+            text = "Esempi: 02, 081, 899 oppure +39 0432. Il blocco comprende tutti i numeri che iniziano con il prefisso."
+            setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_secondary))
+            textSize = 13f
+            setPadding(0, 0, 0, dp(12))
+        }
+        val editPrefisso = EditText(this).apply {
+            hint = "Prefisso"
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+            setSingleLine(true)
+        }
+        val editDescrizione = EditText(this).apply {
+            hint = "Descrizione facoltativa (es. Milano)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            setSingleLine(true)
+        }
+        val btnAggiungi = Button(this).apply { text = "Aggiungi alla lista" }
+        val lista = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
+        val scroll = ScrollView(this).apply {
+            addView(lista)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(300)
+            )
+        }
+        contenitore.addView(spiegazione)
+        contenitore.addView(editPrefisso)
+        contenitore.addView(editDescrizione)
+        contenitore.addView(btnAggiungi)
+        contenitore.addView(scroll)
+
+        fun ricostruisciLista() {
+            lista.removeAllViews()
+            val prefissi = Impostazioni.getPrefissiBloccati(this)
+            if (prefissi.isEmpty()) {
+                lista.addView(TextView(this).apply {
+                    text = "Nessun prefisso bloccato"
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_secondary))
+                    setPadding(8, dp(20), 8, dp(20))
+                })
+                return
+            }
+            prefissi.forEach { voce ->
+                val riga = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(0, dp(5), 0, dp(5))
+                }
+                riga.addView(TextView(this).apply {
+                    text = if (voce.descrizione.isBlank()) voce.prefisso
+                    else "${voce.prefisso}  •  ${voce.descrizione}"
+                    setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_primary))
+                    textSize = 16f
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+                riga.addView(Button(this).apply {
+                    text = "Elimina"
+                    setOnClickListener {
+                        Impostazioni.eliminaPrefissoBloccato(this@ImpostazioniActivity, voce.prefisso)
+                        ricostruisciLista()
+                        aggiornaPulsantePrefissi()
+                    }
+                })
+                lista.addView(riga)
+            }
+        }
+
+        btnAggiungi.setOnClickListener {
+            if (Impostazioni.aggiungiPrefissoBloccato(
+                    this,
+                    editPrefisso.text.toString(),
+                    editDescrizione.text.toString()
+                )
+            ) {
+                editPrefisso.text.clear()
+                editDescrizione.text.clear()
+                editPrefisso.error = null
+                ricostruisciLista()
+                aggiornaPulsantePrefissi()
+            } else {
+                editPrefisso.error = "Inserisci almeno 2 cifre"
+            }
+        }
+        ricostruisciLista()
+        AlertDialog.Builder(this)
+            .setTitle("Prefissi bloccati")
+            .setView(contenitore)
+            .setNegativeButton("Chiudi", null)
+            .create()
+            .show()
     }
 
     private fun aggiornaPulsanteColore() {
