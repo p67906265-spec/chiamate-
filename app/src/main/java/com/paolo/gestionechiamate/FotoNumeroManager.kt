@@ -50,6 +50,17 @@ object FotoNumeroManager {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(chiave).apply()
     }
 
+    fun spostaFoto(context: Context, vecchioNumero: String, nuovoNumero: String) {
+        val vecchiaChiave = normalizza(vecchioNumero)
+        val nuovaChiave = normalizza(nuovoNumero)
+        if (vecchiaChiave.isBlank() || nuovaChiave.isBlank() || vecchiaChiave == nuovaChiave) return
+        val origine = getFotoUri(context, vecchioNumero) ?: return
+        if (getFotoUri(context, nuovoNumero) == null) salvaFoto(context, nuovoNumero, origine)
+        if (getFotoUri(context, nuovoNumero) != null) {
+            rimuoviFoto(context, vecchioNumero)
+        }
+    }
+
     fun normalizza(numero: String): String {
         var cifre = numero.filter(Char::isDigit)
         if (cifre.startsWith("0039") && cifre.length > 10) cifre = cifre.drop(4)

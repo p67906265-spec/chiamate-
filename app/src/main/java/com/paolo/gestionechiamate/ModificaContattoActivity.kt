@@ -12,10 +12,12 @@ import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -52,6 +54,26 @@ class ModificaContattoActivity : AppCompatActivity() {
     private val righeNumeri = mutableListOf<NumeroEditor>()
     private val idNumeriOriginali = mutableSetOf<Long>()
     private lateinit var contenitoreNumeri: LinearLayout
+    private var rigaInAttesaFoto: NumeroEditor? = null
+
+    private val scegliFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val riga = rigaInAttesaFoto
+        rigaInAttesaFoto = null
+        if (uri != null && riga != null) {
+            val numero = numeroCorrente(riga)
+            if (FotoNumeroManager.salvaFoto(this, numero, uri) != null) {
+                if (riga.numeroOriginale.isNotBlank() &&
+                    FotoNumeroManager.normalizza(riga.numeroOriginale) != FotoNumeroManager.normalizza(numero)
+                ) {
+                    FotoNumeroManager.rimuoviFoto(this, riga.numeroOriginale)
+                }
+                aggiornaPulsanteFoto(riga)
+                Toast.makeText(this, "Foto associata al numero", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Impossibile salvare la foto", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -173,7 +195,59 @@ class ModificaContattoActivity : AppCompatActivity() {
             righeNumeri.remove(riga)
             contenitoreNumeri.removeView(vista)
         }
+        vista.findViewById<TextView>(R.id.btnFotoNumero).setOnClickListener {
+            gestisciFoto(riga, it)
+        }
+        aggiornaPulsanteFoto(riga)
         contenitoreNumeri.addView(vista)
+    }
+
+    private fun numeroCorrente(riga: NumeroEditor): String =
+        riga.vista.findViewById<EditText>(R.id.editNumero).text.toString().trim()
+
+    private fun numeroConFoto(riga: NumeroEditor): String? {
+        val corrente = numeroCorrente(riga)
+        if (corrente.isNotBlank() && FotoNumeroManager.getFotoUri(this, corrente) != null) return corrente
+        return riga.numeroOriginale.takeIf {
+            it.isNotBlank() && FotoNumeroManager.getFotoUri(this, it) != null
+        }
+    }
+
+    private fun aggiornaPulsanteFoto(riga: NumeroEditor) {
+        riga.vista.findViewById<TextView>(R.id.btnFotoNumero).text =
+            if (numeroConFoto(riga) == null) "Aggiungi foto dalla galleria"
+            else "Cambia o rimuovi foto"
+    }
+
+    private fun gestisciFoto(riga: NumeroEditor, ancora: View) {
+        val numero = numeroCorrente(riga)
+        if (numero.isBlank()) {
+            Toast.makeText(this, "Inserisci prima il numero di telefono", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val associato = numeroConFoto(riga)
+        if (associato == null) {
+            apriGalleria(riga)
+            return
+        }
+        PopupMenu(this, ancora).apply {
+            menu.add(0, 1, 0, "Cambia foto dalla galleria")
+            menu.add(0, 2, 1, "Rimuovi foto")
+            setOnMenuItemClickListener {
+                if (it.itemId == 1) {
+                    apriGalleria(riga)
+                } else {
+                    FotoNumeroManager.rimuoviFoto(this@ModificaContattoActivity, associato)
+                    aggiornaPulsanteFoto(riga)
+                }
+                true
+            }
+        }.show()
+    }
+
+    private fun apriGalleria(riga: NumeroEditor) {
+        rigaInAttesaFoto = riga
+        scegliFoto.launch("image/*")
     }
 
     private fun salva() {
@@ -273,6 +347,9 @@ class ModificaContattoActivity : AppCompatActivity() {
                 .build()
         }
         contentResolver.applyBatch(ContactsContract.AUTHORITY, operazioni)
+        righeValide.forEach { riga ->
+            FotoNumeroManager.spostaFoto(this, riga.numeroOriginale, numeroCorrente(riga))
+        }
     }
 
     private fun rawIdPer(riga: NumeroEditor): Long =
