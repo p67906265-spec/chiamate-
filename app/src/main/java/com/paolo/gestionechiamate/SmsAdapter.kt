@@ -48,10 +48,6 @@ class SmsAdapter(
 
         holder.itemView.setOnLongClickListener {
             val context = holder.itemView.context
-            if (!isAppSmsPredefinita(context)) {
-                mostraRichiestaSmsPredefinita(context)
-                return@setOnLongClickListener true
-            }
             AlertDialog.Builder(context)
                 .setTitle("Eliminare conversazione")
                 .setMessage("Eliminare tutti i messaggi con ${sms.mittente}?")
@@ -60,10 +56,12 @@ class SmsAdapter(
                     if (eliminati > 0) {
                         Toast.makeText(context, "Conversazione eliminata", Toast.LENGTH_SHORT).show()
                         onEliminato()
+                    } else if (eliminati == ERRORE_PERMESSO) {
+                        mostraRichiestaSmsPredefinita(context)
                     } else {
                         Toast.makeText(
                             context,
-                            "Nessun messaggio eliminato. Verifica che l'app sia quella SMS predefinita.",
+                            "Nessun messaggio trovato da eliminare.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -109,13 +107,12 @@ class SmsAdapter(
                 )
             }
         } catch (_: SecurityException) {
+            return ERRORE_PERMESSO
+        } catch (_: Exception) {
             return 0
         }
         return eliminati
     }
-
-    private fun isAppSmsPredefinita(context: Context): Boolean =
-        Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
 
     private fun mostraRichiestaSmsPredefinita(context: Context) {
         AlertDialog.Builder(context)
@@ -145,4 +142,8 @@ class SmsAdapter(
     }
 
     override fun getItemCount() = dati.size
+
+    companion object {
+        private const val ERRORE_PERMESSO = -1
+    }
 }
