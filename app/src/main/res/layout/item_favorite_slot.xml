@@ -8,16 +8,32 @@
     android:background="@drawable/bg_favorite_slot"
     android:padding="12dp">
 
-    <TextView
-        android:id="@+id/txtIniziale"
+    <FrameLayout
+        android:id="@+id/contenitoreFoto"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:background="@drawable/bg_circle_call"
-        android:gravity="center"
-        android:textColor="@color/white"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:text="?" />
+        android:clipToOutline="true">
+
+        <ImageView
+            android:id="@+id/imgFotoPreferito"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Foto del contatto"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/txtIniziale"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="?"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/txtNome"

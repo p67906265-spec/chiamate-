@@ -8,17 +8,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 
 class PreferitiFragment : Fragment() {
 
     private var slotInAttesaScelta = -1
+    private var slotInAttesaFoto = -1
 
     private val sceltaContatto = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+        ActivityResultContracts.StartActivityForResult()
     ) { risultato ->
         if (risultato.resultCode == android.app.Activity.RESULT_OK) {
             val uri: Uri? = risultato.data?.data
@@ -26,6 +29,20 @@ class PreferitiFragment : Fragment() {
                 leggiContattoESalva(uri, slotInAttesaScelta)
             }
         }
+    }
+
+    private val sceltaFoto = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && slotInAttesaFoto >= 0) {
+            try {
+                requireContext().contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: Exception) {
+            }
+            FavoritesManager.setFoto(requireContext(), slotInAttesaFoto, uri.toString())
+            view?.let { disegnaSlot(it) }
+        }
+        slotInAttesaFoto = -1
     }
 
     override fun onCreateView(
@@ -58,6 +75,7 @@ class PreferitiFragment : Fragment() {
 
             val preferito = FavoritesManager.get(requireContext(), slot)
             val txtIniziale = itemView.findViewById<TextView>(R.id.txtIniziale)
+            val imgFoto = itemView.findViewById<ImageView>(R.id.imgFotoPreferito)
             val txtNome = itemView.findViewById<TextView>(R.id.txtNome)
             val txtNumero = itemView.findViewById<TextView>(R.id.txtNumero)
 
@@ -69,7 +87,24 @@ class PreferitiFragment : Fragment() {
                 txtIniziale.text = preferito.nome?.take(1)?.uppercase() ?: "?"
                 txtNome.text = preferito.nome
                 txtNumero.text = preferito.numero
+                if (!preferito.fotoUri.isNullOrBlank()) {
+                    try {
+                        imgFoto.setImageURI(Uri.parse(preferito.fotoUri))
+                        if (imgFoto.drawable != null) {
+                            imgFoto.visibility = View.VISIBLE
+                            txtIniziale.visibility = View.GONE
+                        } else {
+                            imgFoto.visibility = View.GONE
+                            txtIniziale.visibility = View.VISIBLE
+                        }
+                    } catch (_: Exception) {
+                        imgFoto.visibility = View.GONE
+                        txtIniziale.visibility = View.VISIBLE
+                    }
+                }
             }
+
+            ColoriTesto.applica(itemView)
 
             itemView.setOnClickListener {
                 if (preferito.isVuoto) {
@@ -79,7 +114,7 @@ class PreferitiFragment : Fragment() {
                 }
             }
             itemView.setOnLongClickListener {
-                mostraMenuSlot(slot, preferito.isVuoto)
+                mostraMenuSlot(itemView, slot, preferito)
                 true
             }
 
@@ -87,21 +122,35 @@ class PreferitiFragment : Fragment() {
         }
     }
 
-    private fun mostraMenuSlot(slot: Int, vuoto: Boolean) {
-        val opzioni = if (vuoto)
-            arrayOf(getString(R.string.scegli_contatto, slot + 1))
-        else
-            arrayOf(getString(R.string.scegli_contatto, slot + 1), getString(R.string.elimina_preferito))
-
-        AlertDialog.Builder(requireContext())
-            .setItems(opzioni) { _, which ->
-                if (which == 0) apriScelta(slot)
-                else {
+    private fun mostraMenuSlot(ancora: View, slot: Int, preferito: Preferito) {
+        val menu = PopupMenu(requireContext(), ancora)
+        menu.menu.add(0, 1, 0, if (preferito.isVuoto) "Scegli contatto" else "Cambia contatto")
+        if (!preferito.isVuoto) {
+            menu.menu.add(0, 2, 1, "Scegli foto")
+            if (!preferito.fotoUri.isNullOrBlank()) menu.menu.add(0, 3, 2, "Rimuovi foto")
+            menu.menu.add(0, 4, 3, getString(R.string.elimina_preferito))
+        }
+        menu.setOnMenuItemClickListener { voce ->
+            when (voce.itemId) {
+                1 -> apriScelta(slot)
+                2 -> apriSceltaFoto(slot)
+                3 -> {
+                    FavoritesManager.setFoto(requireContext(), slot, null)
+                    view?.let { disegnaSlot(it) }
+                }
+                4 -> {
                     FavoritesManager.clear(requireContext(), slot)
                     view?.let { disegnaSlot(it) }
                 }
             }
-            .show()
+            true
+        }
+        menu.show()
+    }
+
+    private fun apriSceltaFoto(slot: Int) {
+        slotInAttesaFoto = slot
+        sceltaFoto.launch(arrayOf("image/*"))
     }
 
     private fun apriScelta(slot: Int) {
@@ -116,9 +165,11 @@ class PreferitiFragment : Fragment() {
             if (it.moveToFirst()) {
                 val nomeIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numeroIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val fotoIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
                 val nome = if (nomeIdx >= 0) it.getString(nomeIdx) else "?"
                 val numero = if (numeroIdx >= 0) it.getString(numeroIdx) else ""
-                FavoritesManager.set(requireContext(), slot, nome ?: "?", numero ?: "")
+                val foto = if (fotoIdx >= 0) it.getString(fotoIdx) else null
+                FavoritesManager.set(requireContext(), slot, nome ?: "?", numero ?: "", foto)
                 view?.let { v -> disegnaSlot(v) }
             } else {
                 Toast.makeText(requireContext(), "Contatto non valido", Toast.LENGTH_SHORT).show()

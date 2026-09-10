@@ -94,9 +94,6 @@ class ListaFragment : Fragment() {
 
         if (tipo == TIPO_CHIAMATE) {
             barraScorciatoie.visibility = View.VISIBLE
-            view.findViewById<View>(R.id.btnScorciatoiaRubrica).setOnClickListener {
-                vaiAllaPagina(2)
-            }
             view.findViewById<View>(R.id.btnScorciatoiaPreferiti).setOnClickListener {
                 vaiAllaPagina(3)
             }

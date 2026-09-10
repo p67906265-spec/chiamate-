@@ -83,45 +83,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="18dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:visibility="gone">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_pill_scorciatoie"
-            android:padding="6dp"
-            android:layout_marginEnd="10dp">
-
-            <ImageButton
-                android:id="@+id/btnScorciatoiaRubrica"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_nav_rubrica"
-                android:contentDescription="Rubrica" />
-
-            <ImageButton
-                android:id="@+id/btnScorciatoiaPreferiti"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_nav_preferiti_cuore"
-                android:contentDescription="Preferiti" />
-
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnScorciatoiaPreferiti"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="12dp"
+            android:src="@drawable/ic_nav_preferiti_cuore"
+            android:tint="@color/primary"
+            android:contentDescription="Preferiti" />
 
         <ImageButton
             android:id="@+id/btnScorciatoiaTastierino"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:background="@drawable/bg_fab_tastierino"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="6dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="12dp"
             android:src="@drawable/ic_nav_tastierino"
+            android:tint="@color/primary"
             android:contentDescription="Tastierino" />
 
     </LinearLayout>
