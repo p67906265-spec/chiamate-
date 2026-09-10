@@ -46,9 +46,26 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:clipToPadding="false"
-            android:padding="8dp" />
+            android:paddingStart="8dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="32dp"
+            android:paddingBottom="8dp" />
 
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/indiceAlfabetico"
+        android:layout_width="28dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:layout_marginTop="62dp"
+        android:layout_marginBottom="74dp"
+        android:background="@color/card"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/txtVuoto"

@@ -3,14 +3,13 @@ package com.paolo.gestionechiamate
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.TextView
 import android.widget.ImageButton
+import android.widget.TextView
 
 class ContattoAdapter(private val dati: List<Contatto>) :
     RecyclerView.Adapter<ContattoAdapter.ViewHolder>() {
 
     class ViewHolder(view: android.view.View) : RecyclerView.ViewHolder(view) {
-        val txtIniziale: TextView = view.findViewById(R.id.txtIniziale)
         val txtNome: TextView = view.findViewById(R.id.txtNome)
         val txtNumero: TextView = view.findViewById(R.id.txtNumero)
         val btnChiama: ImageButton = view.findViewById(R.id.btnChiama)
@@ -24,7 +23,6 @@ class ContattoAdapter(private val dati: List<Contatto>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contatto = dati[position]
-        holder.txtIniziale.text = contatto.nome.take(1).uppercase()
         holder.txtNome.text = contatto.nome
         holder.txtNumero.text = if (contatto.numeri.size == 1) {
             contatto.numero

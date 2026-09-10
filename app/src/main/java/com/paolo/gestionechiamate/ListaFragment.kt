@@ -15,7 +15,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -25,6 +27,7 @@ import androidx.viewpager2.widget.ViewPager2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,6 +51,7 @@ class ListaFragment : Fragment() {
     private var tipoPagina: Int = TIPO_RUBRICA
     private var recyclerPagina: RecyclerView? = null
     private var testoVuotoPagina: TextView? = null
+    private var indiceAlfabeticoPagina: LinearLayout? = null
 
     private val creaContatto = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -85,6 +89,7 @@ class ListaFragment : Fragment() {
         testoVuotoPagina = txtVuoto
         val barraScorciatoie = view.findViewById<View>(R.id.barraScorciatoie)
         val barraRicerca = view.findViewById<View>(R.id.barraRicerca)
+        val indiceAlfabetico = view.findViewById<LinearLayout>(R.id.indiceAlfabetico)
         recycler.layoutManager = LinearLayoutManager(requireContext())
 
         if (tipo == TIPO_CHIAMATE) {
@@ -102,6 +107,8 @@ class ListaFragment : Fragment() {
 
         if (tipo == TIPO_RUBRICA) {
             barraRicerca.visibility = View.VISIBLE
+            indiceAlfabetico.visibility = View.VISIBLE
+            indiceAlfabeticoPagina = indiceAlfabetico
             view.findViewById<ImageButton>(R.id.btnNuovoContatto).apply {
                 visibility = View.VISIBLE
                 setOnClickListener {
@@ -139,6 +146,7 @@ class ListaFragment : Fragment() {
     override fun onDestroyView() {
         recyclerPagina = null
         testoVuotoPagina = null
+        indiceAlfabeticoPagina = null
         super.onDestroyView()
     }
 
@@ -174,11 +182,12 @@ class ListaFragment : Fragment() {
                 if (tipoPagina == TIPO_RUBRICA) {
                     @Suppress("UNCHECKED_CAST")
                     contattiCompleti = dati as List<Contatto>
-                }
-                recycler.adapter = when (tipoPagina) {
-                    TIPO_RUBRICA -> ContattoAdapter(dati as List<Contatto>)
-                    TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
-                    else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
+                    mostraContatti(recycler, contattiCompleti)
+                } else {
+                    recycler.adapter = when (tipoPagina) {
+                        TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
+                        else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
+                    }
                 }
             }
         }
@@ -193,7 +202,56 @@ class ListaFragment : Fragment() {
                     it.numeri.any { numero -> numero.numero.contains(testo) }
             }
         }
-        recycler.adapter = ContattoAdapter(filtrati)
+        mostraContatti(recycler, filtrati)
+    }
+
+    private fun mostraContatti(recycler: RecyclerView, contatti: List<Contatto>) {
+        recycler.adapter = ContattoAdapter(contatti)
+        aggiornaIndiceAlfabetico(recycler, contatti)
+    }
+
+    private fun aggiornaIndiceAlfabetico(recycler: RecyclerView, contatti: List<Contatto>) {
+        val indice = indiceAlfabeticoPagina ?: return
+        indice.removeAllViews()
+        val posizioni = mutableMapOf<Char, Int>()
+        contatti.forEachIndexed { posizione, contatto ->
+            val lettera = inizialeIndice(contatto.nome)
+            if (lettera != null && lettera !in posizioni) posizioni[lettera] = posizione
+        }
+
+        ('A'..'Z').forEach { lettera ->
+            val disponibile = posizioni.containsKey(lettera)
+            val voce = TextView(requireContext()).apply {
+                text = lettera.toString()
+                gravity = android.view.Gravity.CENTER
+                textSize = 11f
+                val coloreAttivo = Impostazioni.getColoreTesto(requireContext())
+                    ?: ContextCompat.getColor(requireContext(), R.color.primary)
+                setTextColor(if (disponibile) coloreAttivo else
+                    ContextCompat.getColor(requireContext(), R.color.text_secondary))
+                alpha = if (disponibile) 1f else 0.28f
+                isEnabled = disponibile
+                contentDescription = if (disponibile) "Vai alla lettera $lettera" else "Nessun contatto con $lettera"
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f
+                )
+                if (disponibile) {
+                    setOnClickListener {
+                        val layoutManager = recycler.layoutManager as? LinearLayoutManager
+                        layoutManager?.scrollToPositionWithOffset(posizioni.getValue(lettera), 0)
+                    }
+                }
+            }
+            indice.addView(voce)
+        }
+    }
+
+    private fun inizialeIndice(nome: String): Char? {
+        val senzaAccenti = Normalizer.normalize(nome.trim(), Normalizer.Form.NFD)
+            .replace("\\p{M}+".toRegex(), "")
+        return senzaAccenti.firstOrNull()?.uppercaseChar()?.takeIf { it in 'A'..'Z' }
     }
 
     private fun vaiAllaPagina(posizione: Int) {
