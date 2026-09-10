@@ -173,11 +173,9 @@ class ContattoDettaglioActivity : AppCompatActivity() {
     }
 
     private fun apriModifica() {
-        modificaContatto.launch(
-            Intent(this, ModificaContattoActivity::class.java).apply {
-                putExtra(ModificaContattoActivity.EXTRA_ID, contactId)
-            }
-        )
+        startActivity(Intent(this, ModificaContattoActivity::class.java).apply {
+            putExtra(ModificaContattoActivity.EXTRA_ID, contactId)
+        })
     }
 
     private fun confermaEliminazione() {
