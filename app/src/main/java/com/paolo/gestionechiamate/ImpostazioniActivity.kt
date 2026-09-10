@@ -1,15 +1,15 @@
 package com.paolo.gestionechiamate
 
 import android.app.role.RoleManager
-import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.widget.EditText
-import android.widget.Button
-import android.widget.ScrollView
 import android.widget.RadioGroup
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -179,43 +179,13 @@ class ImpostazioniActivity : AppCompatActivity() {
     }
 
     private fun mostraGestionePrefissi() {
-        val contenitore = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(8), dp(20), dp(4))
-        }
-        val spiegazione = TextView(this).apply {
-            text = "Esempi: 02, 081, 899 oppure +39 0432. Il blocco comprende tutti i numeri che iniziano con il prefisso."
-            setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_secondary))
-            textSize = 13f
-            setPadding(0, 0, 0, dp(12))
-        }
-        val editPrefisso = EditText(this).apply {
-            hint = "Prefisso"
-            inputType = android.text.InputType.TYPE_CLASS_PHONE
-            setSingleLine(true)
-        }
-        val editDescrizione = EditText(this).apply {
-            hint = "Descrizione facoltativa (es. Milano)"
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-            setSingleLine(true)
-        }
-        val btnAggiungi = Button(this).apply { text = "Aggiungi alla lista" }
-        val lista = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(10), 0, 0)
-        }
-        val scroll = ScrollView(this).apply {
-            addView(lista)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(300)
-            )
-        }
-        contenitore.addView(spiegazione)
-        contenitore.addView(editPrefisso)
-        contenitore.addView(editDescrizione)
-        contenitore.addView(btnAggiungi)
-        contenitore.addView(scroll)
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_prefissi_bloccati)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val editPrefisso = dialog.findViewById<EditText>(R.id.editPrefissoDialog)
+        val editDescrizione = dialog.findViewById<EditText>(R.id.editDescrizioneDialog)
+        val btnAggiungi = dialog.findViewById<MaterialButton>(R.id.btnAggiungiPrefissoDialog)
+        val lista = dialog.findViewById<LinearLayout>(R.id.listaPrefissiDialog)
 
         fun ricostruisciLista() {
             lista.removeAllViews()
@@ -233,7 +203,12 @@ class ImpostazioniActivity : AppCompatActivity() {
                 val riga = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
-                    setPadding(0, dp(5), 0, dp(5))
+                    setBackgroundResource(R.drawable.bg_campo_editor)
+                    setPadding(dp(12), dp(6), dp(6), dp(6))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0, dp(5), 0, dp(5)) }
                 }
                 riga.addView(TextView(this).apply {
                     text = if (voce.descrizione.isBlank()) voce.prefisso
@@ -242,8 +217,12 @@ class ImpostazioniActivity : AppCompatActivity() {
                     textSize = 16f
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 })
-                riga.addView(Button(this).apply {
+                riga.addView(MaterialButton(this).apply {
+                    setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.end_call))
                     text = "Elimina"
+                    textSize = 12f
+                    backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+                    minWidth = 0
                     setOnClickListener {
                         Impostazioni.eliminaPrefissoBloccato(this@ImpostazioniActivity, voce.prefisso)
                         ricostruisciLista()
@@ -271,12 +250,10 @@ class ImpostazioniActivity : AppCompatActivity() {
             }
         }
         ricostruisciLista()
-        AlertDialog.Builder(this)
-            .setTitle("Prefissi bloccati")
-            .setView(contenitore)
-            .setNegativeButton("Chiudi", null)
-            .create()
-            .show()
+        dialog.findViewById<MaterialButton>(R.id.btnChiudiPrefissiDialog).setOnClickListener {
+            dialog.dismiss()
+        }
+        mostraDialogCoordinato(dialog)
     }
 
     private fun aggiornaPulsanteColore() {
@@ -288,60 +265,52 @@ class ImpostazioniActivity : AppCompatActivity() {
 
     private fun mostraSceltaColore() {
         val iniziale = Impostazioni.getColoreTesto(this) ?: Color.rgb(21, 101, 192)
-        val contenitore = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(8), dp(24), 0)
-        }
-        val anteprima = TextView(this).apply {
-            text = "Anteprima del testo"
-            textSize = 20f
-            gravity = android.view.Gravity.CENTER
-            setTextColor(iniziale)
-            setPadding(8, dp(18), 8, dp(18))
-        }
-        contenitore.addView(anteprima)
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_colore_testo)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val anteprima = dialog.findViewById<TextView>(R.id.txtAnteprimaColore)
+        val rosso = dialog.findViewById<SeekBar>(R.id.seekRosso)
+        val verde = dialog.findViewById<SeekBar>(R.id.seekVerde)
+        val blu = dialog.findViewById<SeekBar>(R.id.seekBlu)
+        anteprima.setTextColor(iniziale)
+        rosso.progress = Color.red(iniziale)
+        verde.progress = Color.green(iniziale)
+        blu.progress = Color.blue(iniziale)
 
-        val barre = mutableListOf<SeekBar>()
-        fun aggiungiBarra(titolo: String, valore: Int) {
-            contenitore.addView(TextView(this).apply {
-                text = titolo
-                setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_primary))
-            })
-            contenitore.addView(SeekBar(this).apply {
-                max = 255
-                progress = valore
-                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
-                        if (barre.size == 3) {
-                            anteprima.setTextColor(Color.rgb(barre[0].progress, barre[1].progress, barre[2].progress))
-                        }
-                    }
-                    override fun onStartTrackingTouch(bar: SeekBar?) {}
-                    override fun onStopTrackingTouch(bar: SeekBar?) {}
-                })
-                barre += this
-            })
+        val listener = object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                anteprima.setTextColor(Color.rgb(rosso.progress, verde.progress, blu.progress))
+            }
+            override fun onStartTrackingTouch(bar: SeekBar?) {}
+            override fun onStopTrackingTouch(bar: SeekBar?) {}
         }
-        aggiungiBarra("Rosso", Color.red(iniziale))
-        aggiungiBarra("Verde", Color.green(iniziale))
-        aggiungiBarra("Blu", Color.blue(iniziale))
+        rosso.setOnSeekBarChangeListener(listener)
+        verde.setOnSeekBarChangeListener(listener)
+        blu.setOnSeekBarChangeListener(listener)
 
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Colore del testo")
-            .setView(contenitore)
-            .setNegativeButton("Annulla", null)
-            .setNeutralButton("Automatico") { _, _ ->
-                Impostazioni.setColoreTesto(this, null)
-                recreate()
-            }
-            .setPositiveButton("Applica") { _, _ ->
-                Impostazioni.setColoreTesto(
-                    this, Color.rgb(barre[0].progress, barre[1].progress, barre[2].progress)
-                )
-                aggiornaPulsanteColore()
-                ColoriTesto.applica(window.decorView)
-            }
-            .show()
+        dialog.findViewById<MaterialButton>(R.id.btnColoreAutomatico).setOnClickListener {
+            Impostazioni.setColoreTesto(this, null)
+            dialog.dismiss()
+            recreate()
+        }
+        dialog.findViewById<MaterialButton>(R.id.btnColoreAnnulla).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.findViewById<MaterialButton>(R.id.btnColoreApplica).setOnClickListener {
+            Impostazioni.setColoreTesto(this, Color.rgb(rosso.progress, verde.progress, blu.progress))
+            aggiornaPulsanteColore()
+            ColoriTesto.applica(window.decorView)
+            dialog.dismiss()
+        }
+        mostraDialogCoordinato(dialog)
+    }
+
+    private fun mostraDialogCoordinato(dialog: Dialog) {
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun dp(valore: Int) = (valore * resources.displayMetrics.density).toInt()
