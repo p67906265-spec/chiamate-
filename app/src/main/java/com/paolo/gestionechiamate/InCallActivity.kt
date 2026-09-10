@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.telephony.SmsManager
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,6 +16,7 @@ import android.telecom.VideoProfile
 import android.view.View
 import android.widget.GridLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
@@ -34,6 +36,7 @@ class InCallActivity : AppCompatActivity() {
     private lateinit var audioManager: AudioManager
     private lateinit var layoutChiamataInArrivo: View
     private lateinit var layoutChiamataAttiva: View
+    private lateinit var contenitoreFotoChiamante: View
     private var altoparlanteAttivo = false
     private var mutoAttivo = false
     private var attesaAttiva = false
@@ -75,6 +78,7 @@ class InCallActivity : AppCompatActivity() {
         txtNumero = findViewById(R.id.txtNumeroChiamante)
         layoutChiamataInArrivo = findViewById(R.id.layoutChiamataInArrivo)
         layoutChiamataAttiva = findViewById(R.id.layoutChiamataAttiva)
+        contenitoreFotoChiamante = findViewById(R.id.contenitoreFotoChiamante)
         val grid = findViewById<GridLayout>(R.id.gridTasti)
         val btnRiaggancia = findViewById<ImageButton>(R.id.btnRiaggancia)
         val btnTelefono = findViewById<ImageButton>(R.id.btnTelefono)
@@ -90,6 +94,8 @@ class InCallActivity : AppCompatActivity() {
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
         txtNumero.text = numeroChiamante
         txtNome.text = numeroChiamante
+        findViewById<TextView>(R.id.txtInizialeChiamante).text =
+            numeroChiamante.firstOrNull()?.uppercase() ?: "?"
         findViewById<TextView>(R.id.txtTipoNumero).text = InfoNumero.descrizione(numeroChiamante)
         call?.registerCallback(callback)
         call?.let {
@@ -98,10 +104,21 @@ class InCallActivity : AppCompatActivity() {
         }
 
         if (numeroChiamante.isNotBlank()) {
+            val fotoPersonalizzata = FotoNumeroManager.getFotoUri(this, numeroChiamante)?.toString()
+                ?: FavoritesManager.tutti(this).firstOrNull {
+                    FotoNumeroManager.normalizza(it.numero.orEmpty()) ==
+                        FotoNumeroManager.normalizza(numeroChiamante)
+                }?.fotoUri
+            mostraFoto(fotoPersonalizzata)
             lifecycleScope.launch {
-                val nome = withContext(Dispatchers.IO) { cercaNomeInRubrica(numeroChiamante) }
-                if (nome != null) {
-                    txtNome.text = nome
+                val dati = withContext(Dispatchers.IO) { cercaDatiInRubrica(numeroChiamante) }
+                if (dati.nome != null) {
+                    txtNome.text = dati.nome
+                    findViewById<TextView>(R.id.txtInizialeChiamante).text =
+                        dati.nome.take(1).uppercase()
+                }
+                if (fotoPersonalizzata == null) {
+                    mostraFoto(dati.fotoUri)
                 }
             }
         }
@@ -130,6 +147,7 @@ class InCallActivity : AppCompatActivity() {
         btnTastierino.setOnClickListener {
             tastierinoVisibile = !tastierinoVisibile
             grid.visibility = if (tastierinoVisibile) View.VISIBLE else View.GONE
+            contenitoreFotoChiamante.visibility = if (tastierinoVisibile) View.GONE else View.VISIBLE
             btnTastierino.setBackgroundResource(
                 if (tastierinoVisibile) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
             )
@@ -260,27 +278,50 @@ class InCallActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun cercaNomeInRubrica(numero: String): String? {
+    private data class DatiRubrica(val nome: String?, val fotoUri: String?)
+
+    private fun cercaDatiInRubrica(numero: String): DatiRubrica {
         val cifreNumero = soloCifre(numero)
         val cursor = contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.PHOTO_URI
             ),
             null, null, null
         )
         cursor?.use {
             val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
             val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val idxFoto = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
             while (it.moveToNext()) {
                 val numeroRubrica = if (idxNum >= 0) it.getString(idxNum) else null
                 if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
-                    return if (idxNome >= 0) it.getString(idxNome) else null
+                    return DatiRubrica(
+                        if (idxNome >= 0) it.getString(idxNome) else null,
+                        if (idxFoto >= 0) it.getString(idxFoto) else null
+                    )
                 }
             }
         }
-        return null
+        return DatiRubrica(null, null)
+    }
+
+    private fun mostraFoto(uriTesto: String?) {
+        if (uriTesto.isNullOrBlank()) return
+        val immagine = findViewById<ImageView>(R.id.imgFotoChiamante)
+        val iniziale = findViewById<TextView>(R.id.txtInizialeChiamante)
+        try {
+            immagine.setImageURI(Uri.parse(uriTesto))
+            if (immagine.drawable != null) {
+                immagine.visibility = View.VISIBLE
+                iniziale.visibility = View.GONE
+            }
+        } catch (_: Exception) {
+            immagine.visibility = View.GONE
+            iniziale.visibility = View.VISIBLE
+        }
     }
 
     private fun soloCifre(numero: String): String {

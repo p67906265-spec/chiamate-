@@ -11,11 +11,14 @@ import android.provider.ContactsContract
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 
@@ -32,6 +35,20 @@ class ContattoDettaglioActivity : AppCompatActivity() {
     private var lookupKey: String? = null
     private var nomeContatto = "?"
     private var numeri: List<NumeroContatto> = emptyList()
+    private var numeroInAttesaFoto: String? = null
+
+    private val scegliFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val numero = numeroInAttesaFoto
+        numeroInAttesaFoto = null
+        if (uri != null && !numero.isNullOrBlank()) {
+            if (FotoNumeroManager.salvaFoto(this, numero, uri) != null) {
+                aggiornaSchermata()
+                Toast.makeText(this, "Foto associata al numero", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Impossibile salvare la foto", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,9 +143,47 @@ class ContattoDettaglioActivity : AppCompatActivity() {
 
     private fun creaRigaNumero(voce: NumeroContatto): View {
         val riga = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val intestazione = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
+        val foto = FrameLayout(this).apply {
+            setBackgroundResource(R.drawable.bg_circle_primary)
+            clipToOutline = true
+            isClickable = true
+            isFocusable = true
+            contentDescription = "Foto per ${voce.numero}"
+            setOnClickListener { gestisciFotoNumero(this, voce.numero) }
+        }
+        val iniziale = TextView(this).apply {
+            text = nomeContatto.take(1).uppercase()
+            gravity = Gravity.CENTER
+            textSize = 22f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(ContextCompat.getColor(this@ContattoDettaglioActivity, R.color.white))
+        }
+        val immagine = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            visibility = View.GONE
+        }
+        foto.addView(iniziale, FrameLayout.LayoutParams(-1, -1))
+        foto.addView(immagine, FrameLayout.LayoutParams(-1, -1))
+        FotoNumeroManager.getFotoUri(this, voce.numero)?.let { uri ->
+            try {
+                immagine.setImageURI(uri)
+                if (immagine.drawable != null) {
+                    immagine.visibility = View.VISIBLE
+                    iniziale.visibility = View.GONE
+                }
+            } catch (_: Exception) {
+            }
+        }
+        intestazione.addView(foto, LinearLayout.LayoutParams(dp(58), dp(58)).apply {
+            marginEnd = dp(12)
+        })
+
         val testi = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         testi.addView(TextView(this).apply {
             text = voce.etichetta
@@ -141,8 +196,20 @@ class ContattoDettaglioActivity : AppCompatActivity() {
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(ContextCompat.getColor(this@ContattoDettaglioActivity, R.color.text_primary))
         })
-        riga.addView(testi, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        riga.addView(ImageButton(this).apply {
+        testi.addView(TextView(this).apply {
+            text = "Tocca la foto per cambiarla"
+            textSize = 11f
+            setTextColor(ContextCompat.getColor(this@ContattoDettaglioActivity, R.color.text_secondary))
+        })
+        intestazione.addView(testi, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+        riga.addView(intestazione)
+
+        val azioni = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+            setPadding(0, dp(8), 0, 0)
+        }
+        azioni.addView(ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_dialog_email)
             setBackgroundResource(R.drawable.bg_dialpad_key)
             contentDescription = "Messaggio a ${voce.numero}"
@@ -152,13 +219,39 @@ class ContattoDettaglioActivity : AppCompatActivity() {
                 })
             }
         }, LinearLayout.LayoutParams(dp(48), dp(48)).apply { marginEnd = dp(10) })
-        riga.addView(ImageButton(this).apply {
+        azioni.addView(ImageButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_call)
-            setBackgroundResource(R.drawable.bg_circle_call)
+            setBackgroundResource(R.drawable.bg_circle_primary)
             contentDescription = "Chiama ${voce.numero}"
             setOnClickListener { ChiamaHelper.chiama(this@ContattoDettaglioActivity, voce.numero) }
         }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        riga.addView(azioni)
         return riga
+    }
+
+    private fun gestisciFotoNumero(ancora: View, numero: String) {
+        if (FotoNumeroManager.getFotoUri(this, numero) == null) {
+            apriGalleria(numero)
+            return
+        }
+        PopupMenu(this, ancora).apply {
+            menu.add(0, 1, 0, "Cambia foto dalla galleria")
+            menu.add(0, 2, 1, "Rimuovi foto")
+            setOnMenuItemClickListener {
+                if (it.itemId == 1) {
+                    apriGalleria(numero)
+                } else {
+                    FotoNumeroManager.rimuoviFoto(this@ContattoDettaglioActivity, numero)
+                    aggiornaSchermata()
+                }
+                true
+            }
+        }.show()
+    }
+
+    private fun apriGalleria(numero: String) {
+        numeroInAttesaFoto = numero
+        scegliFoto.launch("image/*")
     }
 
     private fun mostraAzioni(ancora: View) {

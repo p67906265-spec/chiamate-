@@ -31,16 +31,22 @@ class PreferitiFragment : Fragment() {
         }
     }
 
-    private val sceltaFoto = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    private val sceltaFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && slotInAttesaFoto >= 0) {
-            try {
-                requireContext().contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: Exception) {
+            val preferito = FavoritesManager.get(requireContext(), slotInAttesaFoto)
+            val fotoSalvata = preferito.numero?.let {
+                FotoNumeroManager.salvaFoto(requireContext(), it, uri)
             }
-            FavoritesManager.setFoto(requireContext(), slotInAttesaFoto, uri.toString())
-            view?.let { disegnaSlot(it) }
+            if (fotoSalvata != null) {
+                FavoritesManager.setFoto(
+                    requireContext(),
+                    slotInAttesaFoto,
+                    fotoSalvata.toString()
+                )
+                view?.let { disegnaSlot(it) }
+            } else {
+                Toast.makeText(requireContext(), "Impossibile salvare la foto", Toast.LENGTH_LONG).show()
+            }
         }
         slotInAttesaFoto = -1
     }
@@ -87,9 +93,12 @@ class PreferitiFragment : Fragment() {
                 txtIniziale.text = preferito.nome?.take(1)?.uppercase() ?: "?"
                 txtNome.text = preferito.nome
                 txtNumero.text = preferito.numero
-                if (!preferito.fotoUri.isNullOrBlank()) {
+                val fotoUri = preferito.numero?.let {
+                    FotoNumeroManager.getFotoUri(requireContext(), it)?.toString()
+                } ?: preferito.fotoUri
+                if (!fotoUri.isNullOrBlank()) {
                     try {
-                        imgFoto.setImageURI(Uri.parse(preferito.fotoUri))
+                        imgFoto.setImageURI(Uri.parse(fotoUri))
                         if (imgFoto.drawable != null) {
                             imgFoto.visibility = View.VISIBLE
                             txtIniziale.visibility = View.GONE
@@ -126,8 +135,11 @@ class PreferitiFragment : Fragment() {
         val menu = PopupMenu(requireContext(), ancora)
         menu.menu.add(0, 1, 0, if (preferito.isVuoto) "Scegli contatto" else "Cambia contatto")
         if (!preferito.isVuoto) {
-            menu.menu.add(0, 2, 1, "Scegli foto")
-            if (!preferito.fotoUri.isNullOrBlank()) menu.menu.add(0, 3, 2, "Rimuovi foto")
+            menu.menu.add(0, 2, 1, "Scegli foto dalla galleria")
+            val haFoto = preferito.numero?.let {
+                FotoNumeroManager.getFotoUri(requireContext(), it) != null
+            } == true || !preferito.fotoUri.isNullOrBlank()
+            if (haFoto) menu.menu.add(0, 3, 2, "Rimuovi foto")
             menu.menu.add(0, 4, 3, getString(R.string.elimina_preferito))
         }
         menu.setOnMenuItemClickListener { voce ->
@@ -135,6 +147,7 @@ class PreferitiFragment : Fragment() {
                 1 -> apriScelta(slot)
                 2 -> apriSceltaFoto(slot)
                 3 -> {
+                    preferito.numero?.let { FotoNumeroManager.rimuoviFoto(requireContext(), it) }
                     FavoritesManager.setFoto(requireContext(), slot, null)
                     view?.let { disegnaSlot(it) }
                 }
@@ -150,7 +163,7 @@ class PreferitiFragment : Fragment() {
 
     private fun apriSceltaFoto(slot: Int) {
         slotInAttesaFoto = slot
-        sceltaFoto.launch(arrayOf("image/*"))
+        sceltaFoto.launch("image/*")
     }
 
     private fun apriScelta(slot: Int) {

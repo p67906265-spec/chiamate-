@@ -3,8 +3,13 @@ package com.paolo.gestionechiamate
 import android.os.Bundle
 import android.provider.CallLog
 import android.provider.ContactsContract
+import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
@@ -24,11 +29,24 @@ class DettaglioChiamateActivity : AppCompatActivity() {
         const val EXTRA_NOME = "nome"
     }
 
+    private var numero: String = ""
+
+    private val scegliFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && numero.isNotBlank()) {
+            if (FotoNumeroManager.salvaFoto(this, numero, uri) != null) {
+                mostraFotoAssociata()
+                Toast.makeText(this, "Foto associata al numero", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Impossibile salvare la foto", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dettaglio_chiamate)
 
-        val numero = intent.getStringExtra(EXTRA_NUMERO) ?: ""
+        numero = intent.getStringExtra(EXTRA_NUMERO) ?: ""
         val nomeIniziale = intent.getStringExtra(EXTRA_NOME)
 
         findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
@@ -42,6 +60,11 @@ class DettaglioChiamateActivity : AppCompatActivity() {
         txtNumero.text = numero
         txtNome.text = nomeIniziale ?: numero
         txtIniziale.text = (nomeIniziale ?: numero).take(1).uppercase()
+        mostraFotoAssociata()
+
+        findViewById<View>(R.id.contenitoreFotoNumero).setOnClickListener {
+            gestisciFoto(it)
+        }
 
         findViewById<ImageButton>(R.id.btnChiama).setOnClickListener {
             ChiamaHelper.chiama(this, numero)
@@ -57,6 +80,45 @@ class DettaglioChiamateActivity : AppCompatActivity() {
             val storico = withContext(Dispatchers.IO) { caricaStorico(numero) }
             recycler.adapter = DettaglioChiamataAdapter(storico)
         }
+    }
+
+    private fun mostraFotoAssociata() {
+        val immagine = findViewById<ImageView>(R.id.imgFotoNumero)
+        val iniziale = findViewById<TextView>(R.id.txtIniziale)
+        val uri = FotoNumeroManager.getFotoUri(this, numero)
+        if (uri == null) {
+            immagine.setImageDrawable(null)
+            immagine.visibility = View.GONE
+            iniziale.visibility = View.VISIBLE
+            return
+        }
+        try {
+            immagine.setImageURI(uri)
+            immagine.visibility = View.VISIBLE
+            iniziale.visibility = View.GONE
+        } catch (_: Exception) {
+            immagine.visibility = View.GONE
+            iniziale.visibility = View.VISIBLE
+        }
+    }
+
+    private fun gestisciFoto(ancora: View) {
+        if (FotoNumeroManager.getFotoUri(this, numero) == null) {
+            scegliFoto.launch("image/*")
+            return
+        }
+        PopupMenu(this, ancora).apply {
+            menu.add(0, 1, 0, "Cambia foto dalla galleria")
+            menu.add(0, 2, 1, "Rimuovi foto")
+            setOnMenuItemClickListener {
+                if (it.itemId == 1) scegliFoto.launch("image/*")
+                else {
+                    FotoNumeroManager.rimuoviFoto(this@DettaglioChiamateActivity, numero)
+                    mostraFotoAssociata()
+                }
+                true
+            }
+        }.show()
     }
 
     private fun soloCifre(numero: String): String {
