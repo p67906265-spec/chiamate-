@@ -73,6 +73,11 @@
             android:theme="@style/Theme.GestioneChiamate" />
 
         <activity
+            android:name=".ModificaContattoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GestioneChiamate" />
+
+        <activity
             android:name=".DettaglioChiamateActivity"
             android:exported="false"
             android:theme="@style/Theme.GestioneChiamate" />

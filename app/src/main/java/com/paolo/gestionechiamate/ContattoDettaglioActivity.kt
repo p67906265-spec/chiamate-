@@ -15,7 +15,6 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -33,10 +32,6 @@ class ContattoDettaglioActivity : AppCompatActivity() {
     private var lookupKey: String? = null
     private var nomeContatto = "?"
     private var numeri: List<NumeroContatto> = emptyList()
-
-    private val modificaContatto = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { caricaContatto() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -178,11 +173,10 @@ class ContattoDettaglioActivity : AppCompatActivity() {
     }
 
     private fun apriModifica() {
-        val uri = uriContatto() ?: return
         modificaContatto.launch(
-            Intent(Intent.ACTION_EDIT).setDataAndType(
-                uri, ContactsContract.Contacts.CONTENT_ITEM_TYPE
-            ).putExtra("finishActivityOnSaveCompleted", true)
+            Intent(this, ModificaContattoActivity::class.java).apply {
+                putExtra(ModificaContattoActivity.EXTRA_ID, contactId)
+            }
         )
     }
 
