@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Bundle
+import android.telecom.TelecomManager
 import androidx.core.content.ContextCompat
 
 object ChiamaHelper {
@@ -28,5 +30,18 @@ object ChiamaHelper {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$numero"))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
+    }
+
+    fun richiamoAutomatico(context: Context, numero: String) {
+        if (numero.isBlank()) return
+        if (ContextCompat.checkSelfPermission(
+                context, Manifest.permission.CALL_PHONE
+        ) != PackageManager.PERMISSION_GRANTED) return
+        try {
+            val telecom = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+            telecom.placeCall(Uri.parse("tel:$numero"), Bundle())
+        } catch (_: Exception) {
+            chiama(context, numero)
+        }
     }
 }

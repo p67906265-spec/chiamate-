@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
+import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -49,6 +50,19 @@ class ImpostazioniActivity : AppCompatActivity() {
             mostraSceltaColore()
         }
 
+        val switchRichiamo = findViewById<Switch>(R.id.switchRichiamoAutomatico)
+        switchRichiamo.isChecked = Impostazioni.isRichiamoAutomatico(this)
+        switchRichiamo.setOnCheckedChangeListener { _, checked ->
+            Impostazioni.setRichiamoAutomatico(this, checked)
+            if (!checked) AutoRichiamo.annulla(this)
+        }
+        findViewById<EditText>(R.id.editMessaggioRifiuto).apply {
+            setText(Impostazioni.getMessaggioRifiuto(this@ImpostazioniActivity))
+            setOnFocusChangeListener { _, haFocus ->
+                if (!haFocus) Impostazioni.setMessaggioRifiuto(this@ImpostazioniActivity, text.toString())
+            }
+        }
+
         val switchNascosti = findViewById<Switch>(R.id.switchNascosti)
         val switchStranieri = findViewById<Switch>(R.id.switchStranieri)
         val switchNonInRubrica = findViewById<Switch>(R.id.switchNonInRubrica)
@@ -76,6 +90,13 @@ class ImpostazioniActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         aggiornaStatoFiltro()
+    }
+
+    override fun onPause() {
+        findViewById<EditText>(R.id.editMessaggioRifiuto).let {
+            Impostazioni.setMessaggioRifiuto(this, it.text.toString())
+        }
+        super.onPause()
     }
 
     private fun aggiornaStatoFiltro() {

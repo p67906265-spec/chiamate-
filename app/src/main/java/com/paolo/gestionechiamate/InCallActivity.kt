@@ -1,7 +1,10 @@
 package com.paolo.gestionechiamate
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.telephony.SmsManager
 import android.media.AudioManager
 import android.os.Bundle
 import android.os.Handler
@@ -14,7 +17,9 @@ import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,11 +84,13 @@ class InCallActivity : AppCompatActivity() {
         val btnAltro = findViewById<ImageButton>(R.id.btnAltro)
         val btnRispondi = findViewById<ImageButton>(R.id.btnRispondi)
         val btnRifiuta = findViewById<ImageButton>(R.id.btnRifiuta)
+        val btnRifiutaMessaggio = findViewById<ImageButton>(R.id.btnRifiutaMessaggio)
 
         val call = MyInCallService.chiamataAttiva
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
         txtNumero.text = numeroChiamante
         txtNome.text = numeroChiamante
+        findViewById<TextView>(R.id.txtTipoNumero).text = InfoNumero.descrizione(numeroChiamante)
         call?.registerCallback(callback)
         call?.let {
             aggiornaStato(it.state)
@@ -106,6 +113,10 @@ class InCallActivity : AppCompatActivity() {
         btnRifiuta.setOnClickListener {
             MyInCallService.chiamataAttiva?.reject(false, null)
             finish()
+        }
+
+        btnRifiutaMessaggio.setOnClickListener {
+            rifiutaConMessaggio()
         }
 
         DialpadKeys.build(this, grid, keySizeDp = 52, stileScuro = true) { cifra ->
@@ -215,6 +226,38 @@ class InCallActivity : AppCompatActivity() {
         val intent = Intent(Intent.ACTION_DIAL)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
+    }
+
+    private fun rifiutaConMessaggio() {
+        if (!InfoNumero.isCellulareItaliano(numeroChiamante)) {
+            Toast.makeText(
+                this,
+                "Il messaggio può essere inviato soltanto a un cellulare italiano",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            Toast.makeText(this, "Permesso SMS non concesso", Toast.LENGTH_LONG).show()
+            return
+        }
+        MyInCallService.chiamataAttiva?.reject(false, null)
+        try {
+            @Suppress("DEPRECATION")
+            SmsManager.getDefault().sendTextMessage(
+                numeroChiamante,
+                null,
+                Impostazioni.getMessaggioRifiuto(this),
+                null,
+                null
+            )
+            Toast.makeText(this, "Chiamata rifiutata e messaggio inviato", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Chiamata rifiutata, ma SMS non inviato", Toast.LENGTH_LONG).show()
+        }
+        finish()
     }
 
     private fun cercaNomeInRubrica(numero: String): String? {

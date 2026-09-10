@@ -10,6 +10,9 @@ object Impostazioni {
     const val TEMA_CHIARO = 0
     const val TEMA_SCURO = 1
     private const val KEY_COLORE_TESTO = "colore_testo"
+    private const val KEY_RICHIAMO_AUTOMATICO = "richiamo_automatico"
+    private const val KEY_MESSAGGIO_RIFIUTO = "messaggio_rifiuto"
+    const val MESSAGGIO_RIFIUTO_PREDEFINITO = "Sono occupato, ti richiamo dopo"
     const val TEMA_SISTEMA = 2
 
     private fun prefs(context: Context) =
@@ -62,5 +65,23 @@ object Impostazioni {
 
     fun setBloccoNonInRubrica(context: Context, valore: Boolean) {
         prefs(context).edit().putBoolean("blocco_non_in_rubrica", valore).apply()
+    }
+
+    fun isRichiamoAutomatico(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_RICHIAMO_AUTOMATICO, true)
+
+    fun setRichiamoAutomatico(context: Context, valore: Boolean) {
+        prefs(context).edit().putBoolean(KEY_RICHIAMO_AUTOMATICO, valore).apply()
+    }
+
+    fun getMessaggioRifiuto(context: Context): String =
+        prefs(context).getString(KEY_MESSAGGIO_RIFIUTO, MESSAGGIO_RIFIUTO_PREDEFINITO)
+            ?.takeIf { it.isNotBlank() } ?: MESSAGGIO_RIFIUTO_PREDEFINITO
+
+    fun setMessaggioRifiuto(context: Context, valore: String) {
+        prefs(context).edit().putString(
+            KEY_MESSAGGIO_RIFIUTO,
+            valore.trim().ifBlank { MESSAGGIO_RIFIUTO_PREDEFINITO }
+        ).apply()
     }
 }

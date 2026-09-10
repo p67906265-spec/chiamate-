@@ -166,5 +166,9 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".AnnullaRichiamoReceiver"
+            android:exported="false" />
+
     </application>
 </manifest>
