@@ -42,6 +42,7 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
         )
         val richiamabile = voce.numero.isNotBlank() && !voce.numero.startsWith("-")
         holder.btnChiama.visibility = if (richiamabile) View.VISIBLE else View.INVISIBLE
+        ColoriTesto.applica(holder.itemView)
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, voce.numero)
         }

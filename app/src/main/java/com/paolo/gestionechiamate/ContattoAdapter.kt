@@ -31,6 +31,7 @@ class ContattoAdapter(private val dati: List<Contatto>) :
         } else {
             "${contatto.numero}  •  ${contatto.numeri.size} numeri"
         }
+        ColoriTesto.applica(holder.itemView)
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, contatto.numero)
         }

@@ -2,10 +2,13 @@ package com.paolo.gestionechiamate
 
 import android.app.role.RoleManager
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.telecom.TelecomManager
 import android.widget.RadioGroup
+import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +42,11 @@ class ImpostazioniActivity : AppCompatActivity() {
                 else -> Impostazioni.TEMA_SISTEMA
             }
             Impostazioni.setTema(this, tema)
+        }
+
+        aggiornaPulsanteColore()
+        findViewById<MaterialButton>(R.id.btnColoreTesto).setOnClickListener {
+            mostraSceltaColore()
         }
 
         val switchNascosti = findViewById<Switch>(R.id.switchNascosti)
@@ -131,4 +139,71 @@ class ImpostazioniActivity : AppCompatActivity() {
             android.widget.Toast.LENGTH_LONG
         ).show()
     }
+
+    private fun aggiornaPulsanteColore() {
+        val colore = Impostazioni.getColoreTesto(this)
+        findViewById<MaterialButton>(R.id.btnColoreTesto).text = if (colore == null) {
+            "Automatico (tema dell'app)"
+        } else String.format("Colore scelto  #%06X", 0xFFFFFF and colore)
+    }
+
+    private fun mostraSceltaColore() {
+        val iniziale = Impostazioni.getColoreTesto(this) ?: Color.rgb(21, 101, 192)
+        val contenitore = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), 0)
+        }
+        val anteprima = TextView(this).apply {
+            text = "Anteprima del testo"
+            textSize = 20f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(iniziale)
+            setPadding(8, dp(18), 8, dp(18))
+        }
+        contenitore.addView(anteprima)
+
+        val barre = mutableListOf<SeekBar>()
+        fun aggiungiBarra(titolo: String, valore: Int) {
+            contenitore.addView(TextView(this).apply {
+                text = titolo
+                setTextColor(androidx.core.content.ContextCompat.getColor(this@ImpostazioniActivity, R.color.text_primary))
+            })
+            contenitore.addView(SeekBar(this).apply {
+                max = 255
+                progress = valore
+                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                        if (barre.size == 3) {
+                            anteprima.setTextColor(Color.rgb(barre[0].progress, barre[1].progress, barre[2].progress))
+                        }
+                    }
+                    override fun onStartTrackingTouch(bar: SeekBar?) {}
+                    override fun onStopTrackingTouch(bar: SeekBar?) {}
+                })
+                barre += this
+            })
+        }
+        aggiungiBarra("Rosso", Color.red(iniziale))
+        aggiungiBarra("Verde", Color.green(iniziale))
+        aggiungiBarra("Blu", Color.blue(iniziale))
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Colore del testo")
+            .setView(contenitore)
+            .setNegativeButton("Annulla", null)
+            .setNeutralButton("Automatico") { _, _ ->
+                Impostazioni.setColoreTesto(this, null)
+                recreate()
+            }
+            .setPositiveButton("Applica") { _, _ ->
+                Impostazioni.setColoreTesto(
+                    this, Color.rgb(barre[0].progress, barre[1].progress, barre[2].progress)
+                )
+                aggiornaPulsanteColore()
+                ColoriTesto.applica(window.decorView)
+            }
+            .show()
+    }
+
+    private fun dp(valore: Int) = (valore * resources.displayMetrics.density).toInt()
 }

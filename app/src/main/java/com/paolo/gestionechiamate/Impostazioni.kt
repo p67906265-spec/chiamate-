@@ -9,6 +9,7 @@ object Impostazioni {
 
     const val TEMA_CHIARO = 0
     const val TEMA_SCURO = 1
+    private const val KEY_COLORE_TESTO = "colore_testo"
     const val TEMA_SISTEMA = 2
 
     private fun prefs(context: Context) =
@@ -19,6 +20,18 @@ object Impostazioni {
     fun setTema(context: Context, tema: Int) {
         prefs(context).edit().putInt("tema", tema).apply()
         applicaTema(tema)
+    }
+
+    fun getColoreTesto(context: Context): Int? {
+        val valore = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getInt(KEY_COLORE_TESTO, Int.MIN_VALUE)
+        return valore.takeIf { it != Int.MIN_VALUE }
+    }
+
+    fun setColoreTesto(context: Context, colore: Int?) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
+            if (colore == null) remove(KEY_COLORE_TESTO) else putInt(KEY_COLORE_TESTO, colore)
+        }.apply()
     }
 
     fun applicaTema(tema: Int) {
