@@ -150,10 +150,12 @@ class InCallActivity : AppCompatActivity() {
             when (item.itemId) {
                 1 -> {
                     altoparlanteAttivo = false
+                    MyInCallService.istanza?.setAudioRoute(android.telecom.CallAudioState.ROUTE_EARPIECE)
                     audioManager.isSpeakerphoneOn = false
                 }
                 2 -> {
                     altoparlanteAttivo = true
+                    MyInCallService.istanza?.setAudioRoute(android.telecom.CallAudioState.ROUTE_SPEAKER)
                     audioManager.isSpeakerphoneOn = true
                 }
             }
