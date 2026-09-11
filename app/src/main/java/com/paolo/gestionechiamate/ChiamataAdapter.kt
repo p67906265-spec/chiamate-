@@ -8,8 +8,14 @@ import android.widget.TextView
 import android.provider.CallLog
 import androidx.recyclerview.widget.RecyclerView
 
-class ChiamataAdapter(private val dati: List<VoceChiamata>) :
+class ChiamataAdapter(
+    private val dati: List<VoceChiamata>,
+    private val onSelezioneCambiata: (Set<Long>) -> Unit
+) :
     RecyclerView.Adapter<ChiamataAdapter.ViewHolder>() {
+
+    private val selezionate = linkedSetOf<Long>()
+    private var modalitaSelezione = false
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val txtNome: TextView = view.findViewById(R.id.txtNome)
@@ -25,7 +31,7 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val voce = dati[position]
-        holder.txtNome.text = if (voce.conteggio > 1) "${voce.nome} (${voce.conteggio})" else voce.nome
+        holder.txtNome.text = voce.nome
         val tipo = when (voce.tipo) {
             CallLog.Calls.OUTGOING_TYPE -> "Effettuata"
             CallLog.Calls.MISSED_TYPE -> "Persa"
@@ -42,20 +48,54 @@ class ChiamataAdapter(private val dati: List<VoceChiamata>) :
         )
         val richiamabile = voce.numero.isNotBlank() && !voce.numero.startsWith("-")
         holder.btnChiama.visibility = if (richiamabile) View.VISIBLE else View.INVISIBLE
+        holder.btnChiama.isEnabled = !modalitaSelezione
+        val sfondo = if (voce.id in selezionate) {
+            R.drawable.bg_chiamata_selezionata
+        } else {
+            val valore = android.util.TypedValue()
+            holder.itemView.context.theme.resolveAttribute(
+                android.R.attr.selectableItemBackground, valore, true
+            )
+            valore.resourceId
+        }
+        holder.itemView.setBackgroundResource(sfondo)
         ColoriTesto.applica(holder.itemView)
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, voce.numero)
         }
         holder.itemView.setOnClickListener {
+            if (modalitaSelezione) {
+                cambiaSelezione(voce.id)
+                return@setOnClickListener
+            }
             val context = holder.itemView.context
             val intent = android.content.Intent(context, DettaglioChiamateActivity::class.java)
             intent.putExtra(DettaglioChiamateActivity.EXTRA_NUMERO, voce.numero)
             intent.putExtra(DettaglioChiamateActivity.EXTRA_NOME, voce.nome)
             context.startActivity(intent)
         }
+        holder.itemView.setOnLongClickListener {
+            modalitaSelezione = true
+            cambiaSelezione(voce.id)
+            true
+        }
     }
 
     override fun getItemCount() = dati.size
+
+    fun annullaSelezione() {
+        modalitaSelezione = false
+        selezionate.clear()
+        notifyDataSetChanged()
+        onSelezioneCambiata(emptySet())
+    }
+
+    private fun cambiaSelezione(id: Long) {
+        if (id in selezionate) selezionate.remove(id) else selezionate.add(id)
+        if (selezionate.isEmpty()) modalitaSelezione = false
+        notifyDataSetChanged()
+        onSelezioneCambiata(selezionate.toSet())
+    }
 
     private fun VoceChiamata.numeroVisualizzabile(): String = when (numero) {
         "-1", "-2", "-3", "" -> "Numero non disponibile"

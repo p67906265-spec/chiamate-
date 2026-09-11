@@ -1,7 +1,10 @@
 package com.paolo.gestionechiamate
 
+import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -17,6 +20,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -52,6 +56,22 @@ class ListaFragment : Fragment() {
     private var recyclerPagina: RecyclerView? = null
     private var testoVuotoPagina: TextView? = null
     private var indiceAlfabeticoPagina: LinearLayout? = null
+    private var adapterChiamate: ChiamataAdapter? = null
+    private var chiamateSelezionate: Set<Long> = emptySet()
+    private var azioneDopoPermessoScrittura: (() -> Unit)? = null
+
+    private val richiediScritturaRegistro = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concesso ->
+        val azione = azioneDopoPermessoScrittura
+        azioneDopoPermessoScrittura = null
+        if (concesso) azione?.invoke()
+        else Toast.makeText(
+            requireContext(),
+            "Per eliminare le chiamate, imposta Gestione Chiamate come app Telefono predefinita",
+            Toast.LENGTH_LONG
+        ).show()
+    }
 
     private val creaContatto = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -102,6 +122,12 @@ class ListaFragment : Fragment() {
                 spazioScorciatoie
             )
             recycler.clipToPadding = false
+            view.findViewById<TextView>(R.id.btnAnnullaSelezione).setOnClickListener {
+                adapterChiamate?.annullaSelezione()
+            }
+            view.findViewById<TextView>(R.id.btnEliminaSelezione).setOnClickListener {
+                confermaEliminaSelezionate()
+            }
             view.findViewById<View>(R.id.btnScorciatoiaPreferiti).setOnClickListener {
                 vaiAllaPagina(3)
             }
@@ -149,6 +175,8 @@ class ListaFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        adapterChiamate = null
+        chiamateSelezionate = emptySet()
         recyclerPagina = null
         testoVuotoPagina = null
         indiceAlfabeticoPagina = null
@@ -190,11 +218,104 @@ class ListaFragment : Fragment() {
                     mostraContatti(recycler, contattiCompleti)
                 } else {
                     recycler.adapter = when (tipoPagina) {
-                        TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>)
+                        TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>) { selezionate ->
+                            aggiornaBarraSelezione(selezionate)
+                        }.also { adapterChiamate = it }
                         else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
                     }
                 }
             }
+        }
+    }
+
+    private fun aggiornaBarraSelezione(selezionate: Set<Long>) {
+        chiamateSelezionate = selezionate
+        val root = view ?: return
+        val barra = root.findViewById<View>(R.id.barraSelezioneChiamate)
+        barra.visibility = if (selezionate.isEmpty()) View.GONE else View.VISIBLE
+        root.findViewById<View>(R.id.barraScorciatoie).visibility =
+            if (selezionate.isEmpty()) View.VISIBLE else View.GONE
+        root.findViewById<TextView>(R.id.txtConteggioSelezione).text =
+            if (selezionate.size == 1) "1 chiamata selezionata"
+            else "${selezionate.size} chiamate selezionate"
+    }
+
+    private fun confermaEliminaSelezionate() {
+        val ids = chiamateSelezionate
+        if (ids.isEmpty()) return
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminare le chiamate selezionate?")
+            .setMessage("Verranno eliminate ${ids.size} chiamate dal registro del telefono.")
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Elimina") { _, _ ->
+                eseguiConPermessoScrittura { eliminaChiamate(ids) }
+            }
+            .show()
+    }
+
+    fun confermaEliminaTutteRicevute() {
+        if (tipoPagina != TIPO_CHIAMATE || !isAdded) return
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminare tutte le chiamate ricevute?")
+            .setMessage(
+                "Verranno eliminate le chiamate ricevute, perse, rifiutate e bloccate. " +
+                    "Le chiamate effettuate rimarranno nel registro."
+            )
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Elimina tutte") { _, _ ->
+                eseguiConPermessoScrittura { eliminaTutteRicevute() }
+            }
+            .show()
+    }
+
+    private fun eseguiConPermessoScrittura(azione: () -> Unit) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_CALL_LOG) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            azione()
+        } else {
+            azioneDopoPermessoScrittura = azione
+            richiediScritturaRegistro.launch(Manifest.permission.WRITE_CALL_LOG)
+        }
+    }
+
+    private fun eliminaChiamate(ids: Set<Long>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val eliminati = withContext(Dispatchers.IO) {
+                runCatching {
+                    val segnaposto = ids.joinToString(",") { "?" }
+                    requireContext().contentResolver.delete(
+                        CallLog.Calls.CONTENT_URI,
+                        "${CallLog.Calls._ID} IN ($segnaposto)",
+                        ids.map { it.toString() }.toTypedArray()
+                    )
+                }.getOrDefault(0)
+            }
+            adapterChiamate?.annullaSelezione()
+            Toast.makeText(requireContext(), "$eliminati chiamate eliminate", Toast.LENGTH_SHORT).show()
+            caricaPagina()
+        }
+    }
+
+    private fun eliminaTutteRicevute() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val eliminati = withContext(Dispatchers.IO) {
+                runCatching {
+                    val tipi = intArrayOf(
+                        CallLog.Calls.INCOMING_TYPE,
+                        CallLog.Calls.MISSED_TYPE,
+                        CallLog.Calls.REJECTED_TYPE,
+                        CallLog.Calls.BLOCKED_TYPE
+                    )
+                    requireContext().contentResolver.delete(
+                        CallLog.Calls.CONTENT_URI,
+                        "${CallLog.Calls.TYPE} IN (?,?,?,?)",
+                        tipi.map { it.toString() }.toTypedArray()
+                    )
+                }.getOrDefault(0)
+            }
+            Toast.makeText(requireContext(), "$eliminati chiamate eliminate", Toast.LENGTH_SHORT).show()
+            caricaPagina()
         }
     }
 
@@ -408,18 +529,26 @@ class ListaFragment : Fragment() {
         val lista = mutableListOf<VoceChiamata>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             CallLog.Calls.CONTENT_URI,
-            arrayOf(CallLog.Calls.CACHED_NAME, CallLog.Calls.NUMBER, CallLog.Calls.DATE, CallLog.Calls.TYPE),
+            arrayOf(
+                CallLog.Calls._ID,
+                CallLog.Calls.CACHED_NAME,
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.DATE,
+                CallLog.Calls.TYPE
+            ),
             null, null,
             CallLog.Calls.DATE + " DESC"
         )
         val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
         cursor?.use {
+            val idxId = it.getColumnIndex(CallLog.Calls._ID)
             val idxNome = it.getColumnIndex(CallLog.Calls.CACHED_NAME)
             val idxNum = it.getColumnIndex(CallLog.Calls.NUMBER)
             val idxData = it.getColumnIndex(CallLog.Calls.DATE)
             val idxTipo = it.getColumnIndex(CallLog.Calls.TYPE)
             var count = 0
             while (it.moveToNext() && count < 200) {
+                val id = if (idxId >= 0) it.getLong(idxId) else 0L
                 val nomeCache = if (idxNome >= 0) it.getString(idxNome) else null
                 val numeroGrezzo = if (idxNum >= 0) it.getString(idxNum) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
@@ -437,13 +566,9 @@ class ListaFragment : Fragment() {
                     ?: nomeCache?.takeIf { it.isNotBlank() }
                     ?: numeroVisualizzato
 
-                val nuova = VoceChiamata(nome, numeroGrezzo, formato.format(Date(data)), tipoChiamata)
-                val precedente = lista.lastOrNull()
-                if (precedente != null && normalizzaNumero(precedente.numero) == normalizzaNumero(numeroGrezzo)) {
-                    lista[lista.lastIndex] = precedente.copy(conteggio = precedente.conteggio + 1)
-                } else {
-                    lista.add(nuova)
-                }
+                lista.add(
+                    VoceChiamata(id, nome, numeroGrezzo, formato.format(Date(data)), tipoChiamata)
+                )
                 count++
             }
         }
@@ -513,10 +638,10 @@ data class Contatto(
     val numero: String get() = numeri.firstOrNull()?.numero.orEmpty()
 }
 data class VoceChiamata(
+    val id: Long,
     val nome: String,
     val numero: String,
     val dataFormattata: String,
-    val tipo: Int,
-    val conteggio: Int = 1
+    val tipo: Int
 )
 data class Sms(val mittente: String, val numero: String, val corpo: String, val dataFormattata: String)

@@ -99,6 +99,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.azione_elimina_chiamate_ricevute) {
+            val frammentoChiamate = supportFragmentManager.findFragmentByTag("f0") as? ListaFragment
+            if (frammentoChiamate != null) {
+                frammentoChiamate.confermaEliminaTutteRicevute()
+            } else {
+                android.widget.Toast.makeText(
+                    this, "Apri prima il pannello Chiamate", android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+            return true
+        }
         if (item.itemId == R.id.azione_impostazioni) {
             startActivity(Intent(this, ImpostazioniActivity::class.java))
             return true
