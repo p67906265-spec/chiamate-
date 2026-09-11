@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class ChiamataAdapter(
     private val dati: List<VoceChiamata>,
-    private val onSelezioneCambiata: (Set<Long>) -> Unit
+    private val onSelezioneCambiata: (List<VoceChiamata>) -> Unit
 ) :
     RecyclerView.Adapter<ChiamataAdapter.ViewHolder>() {
 
@@ -87,14 +87,14 @@ class ChiamataAdapter(
         modalitaSelezione = false
         selezionate.clear()
         notifyDataSetChanged()
-        onSelezioneCambiata(emptySet())
+        onSelezioneCambiata(emptyList())
     }
 
     private fun cambiaSelezione(id: Long) {
         if (id in selezionate) selezionate.remove(id) else selezionate.add(id)
         if (selezionate.isEmpty()) modalitaSelezione = false
         notifyDataSetChanged()
-        onSelezioneCambiata(selezionate.toSet())
+        onSelezioneCambiata(dati.filter { it.id in selezionate })
     }
 
     private fun VoceChiamata.numeroVisualizzabile(): String = when (numero) {

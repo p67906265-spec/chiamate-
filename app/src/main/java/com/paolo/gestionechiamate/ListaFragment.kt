@@ -2,7 +2,6 @@ package com.paolo.gestionechiamate
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -57,7 +56,7 @@ class ListaFragment : Fragment() {
     private var testoVuotoPagina: TextView? = null
     private var indiceAlfabeticoPagina: LinearLayout? = null
     private var adapterChiamate: ChiamataAdapter? = null
-    private var chiamateSelezionate: Set<Long> = emptySet()
+    private var gruppiChiamateSelezionati: List<VoceChiamata> = emptyList()
     private var azioneDopoPermessoScrittura: (() -> Unit)? = null
 
     private val richiediScritturaRegistro = registerForActivityResult(
@@ -176,7 +175,7 @@ class ListaFragment : Fragment() {
 
     override fun onDestroyView() {
         adapterChiamate = null
-        chiamateSelezionate = emptySet()
+        gruppiChiamateSelezionati = emptyList()
         recyclerPagina = null
         testoVuotoPagina = null
         indiceAlfabeticoPagina = null
@@ -218,8 +217,8 @@ class ListaFragment : Fragment() {
                     mostraContatti(recycler, contattiCompleti)
                 } else {
                     recycler.adapter = when (tipoPagina) {
-                        TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>) { selezionate ->
-                            aggiornaBarraSelezione(selezionate)
+                        TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>) { gruppi ->
+                            aggiornaBarraSelezione(gruppi)
                         }.also { adapterChiamate = it }
                         else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
                     }
@@ -228,44 +227,58 @@ class ListaFragment : Fragment() {
         }
     }
 
-    private fun aggiornaBarraSelezione(selezionate: Set<Long>) {
-        chiamateSelezionate = selezionate
+    private fun aggiornaBarraSelezione(gruppi: List<VoceChiamata>) {
+        gruppiChiamateSelezionati = gruppi
         val root = view ?: return
         val barra = root.findViewById<View>(R.id.barraSelezioneChiamate)
-        barra.visibility = if (selezionate.isEmpty()) View.GONE else View.VISIBLE
+        barra.visibility = if (gruppi.isEmpty()) View.GONE else View.VISIBLE
         root.findViewById<View>(R.id.barraScorciatoie).visibility =
-            if (selezionate.isEmpty()) View.VISIBLE else View.GONE
+            if (gruppi.isEmpty()) View.VISIBLE else View.GONE
         root.findViewById<TextView>(R.id.txtConteggioSelezione).text =
-            if (selezionate.size == 1) "1 chiamata selezionata"
-            else "${selezionate.size} chiamate selezionate"
+            if (gruppi.size == 1) "1 gruppo selezionato"
+            else "${gruppi.size} gruppi selezionati"
     }
 
     private fun confermaEliminaSelezionate() {
-        val ids = chiamateSelezionate
-        if (ids.isEmpty()) return
-        AlertDialog.Builder(requireContext())
-            .setTitle("Eliminare le chiamate selezionate?")
-            .setMessage("Verranno eliminate ${ids.size} chiamate dal registro del telefono.")
-            .setNegativeButton("Annulla", null)
-            .setPositiveButton("Elimina") { _, _ ->
-                eseguiConPermessoScrittura { eliminaChiamate(ids) }
-            }
-            .show()
+        val gruppi = gruppiChiamateSelezionati
+        if (gruppi.isEmpty()) return
+        val ids = gruppi.flatMap { it.ids }.toSet()
+        mostraConfermaEliminazione(
+            if (gruppi.size == 1) "Eliminare il gruppo selezionato?" else "Eliminare i gruppi selezionati?",
+            if (gruppi.size == 1) "Saranno eliminate tutte le chiamate consecutive contenute in questo gruppo."
+            else "Saranno eliminate tutte le chiamate contenute nei ${gruppi.size} gruppi selezionati.",
+            "Elimina"
+        ) { eseguiConPermessoScrittura { eliminaChiamate(ids) } }
     }
 
     fun confermaEliminaTutteRicevute() {
         if (tipoPagina != TIPO_CHIAMATE || !isAdded) return
-        AlertDialog.Builder(requireContext())
-            .setTitle("Eliminare tutte le chiamate ricevute?")
-            .setMessage(
-                "Verranno eliminate le chiamate ricevute, perse, rifiutate e bloccate. " +
-                    "Le chiamate effettuate rimarranno nel registro."
-            )
-            .setNegativeButton("Annulla", null)
-            .setPositiveButton("Elimina tutte") { _, _ ->
-                eseguiConPermessoScrittura { eliminaTutteRicevute() }
-            }
-            .show()
+        mostraConfermaEliminazione(
+            "Eliminare tutte le chiamate ricevute?",
+            "Saranno eliminate le chiamate ricevute, perse, rifiutate e bloccate. Le chiamate effettuate rimarranno.",
+            "Elimina tutte"
+        ) { eseguiConPermessoScrittura { eliminaTutteRicevute() } }
+    }
+
+    private fun mostraConfermaEliminazione(
+        titolo: String, messaggio: String, testoAzione: String, conferma: () -> Unit
+    ) {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.setContentView(R.layout.dialog_conferma_eliminazione)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.findViewById<TextView>(R.id.txtTitoloConferma).text = titolo
+        dialog.findViewById<TextView>(R.id.txtMessaggioConferma).text = messaggio
+        dialog.findViewById<TextView>(R.id.btnConfermaElimina).apply {
+            text = testoAzione
+            setOnClickListener { dialog.dismiss(); conferma() }
+        }
+        dialog.findViewById<TextView>(R.id.btnConfermaAnnulla).setOnClickListener { dialog.dismiss() }
+        ColoriTesto.applica(dialog.findViewById(R.id.pannelloConferma))
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.88f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun eseguiConPermessoScrittura(azione: () -> Unit) {
@@ -566,9 +579,17 @@ class ListaFragment : Fragment() {
                     ?: nomeCache?.takeIf { it.isNotBlank() }
                     ?: numeroVisualizzato
 
-                lista.add(
-                    VoceChiamata(id, nome, numeroGrezzo, formato.format(Date(data)), tipoChiamata)
+                val nuova = VoceChiamata(
+                    id, listOf(id), nome, numeroGrezzo, formato.format(Date(data)), tipoChiamata
                 )
+                val precedente = lista.lastOrNull()
+                if (precedente != null &&
+                    normalizzaNumero(precedente.numero) == normalizzaNumero(numeroGrezzo)
+                ) {
+                    lista[lista.lastIndex] = precedente.copy(ids = precedente.ids + id)
+                } else {
+                    lista.add(nuova)
+                }
                 count++
             }
         }
@@ -639,6 +660,7 @@ data class Contatto(
 }
 data class VoceChiamata(
     val id: Long,
+    val ids: List<Long>,
     val nome: String,
     val numero: String,
     val dataFormattata: String,
