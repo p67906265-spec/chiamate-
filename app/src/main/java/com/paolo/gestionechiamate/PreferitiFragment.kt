@@ -1,6 +1,8 @@
 package com.paolo.gestionechiamate
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -13,6 +15,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 
 class PreferitiFragment : Fragment() {
@@ -68,6 +71,7 @@ class PreferitiFragment : Fragment() {
         val grid = root.findViewById<GridLayout>(R.id.gridPreferiti)
         grid.removeAllViews()
         val inflater = LayoutInflater.from(requireContext())
+        val fotoRubrica = caricaFotoRubrica()
 
         for (slot in 0 until FavoritesManager.NUM_SLOT) {
             val itemView = inflater.inflate(R.layout.item_favorite_slot, grid, false)
@@ -93,24 +97,19 @@ class PreferitiFragment : Fragment() {
                 txtIniziale.text = preferito.nome?.take(1)?.uppercase() ?: "?"
                 txtNome.text = preferito.nome
                 txtNumero.text = preferito.numero
-                val fotoUri = preferito.numero?.let {
+                val numeroNormalizzato = FotoNumeroManager.normalizza(preferito.numero.orEmpty())
+                val fotoPersonalizzata = preferito.numero?.let {
                     FotoNumeroManager.getFotoUri(requireContext(), it)?.toString()
-                } ?: preferito.fotoUri
-                if (!fotoUri.isNullOrBlank()) {
-                    try {
-                        imgFoto.setImageURI(Uri.parse(fotoUri))
-                        if (imgFoto.drawable != null) {
-                            imgFoto.visibility = View.VISIBLE
-                            txtIniziale.visibility = View.GONE
-                        } else {
-                            imgFoto.visibility = View.GONE
-                            txtIniziale.visibility = View.VISIBLE
-                        }
-                    } catch (_: Exception) {
-                        imgFoto.visibility = View.GONE
-                        txtIniziale.visibility = View.VISIBLE
-                    }
                 }
+                mostraPrimaFotoValida(
+                    imgFoto,
+                    txtIniziale,
+                    listOfNotNull(
+                        fotoPersonalizzata,
+                        preferito.fotoUri,
+                        fotoRubrica[numeroNormalizzato]
+                    ).distinct()
+                )
             }
 
             ColoriTesto.applica(itemView)
@@ -128,6 +127,55 @@ class PreferitiFragment : Fragment() {
             }
 
             grid.addView(itemView)
+        }
+    }
+
+    private fun caricaFotoRubrica(): Map<String, String> {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return emptyMap()
+        val risultato = mutableMapOf<String, String>()
+        requireContext().contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.PHOTO_URI
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val indiceNumero = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+            val indiceFoto = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
+            while (cursor.moveToNext()) {
+                val numero = if (indiceNumero >= 0) cursor.getString(indiceNumero) else null
+                val foto = if (indiceFoto >= 0) cursor.getString(indiceFoto) else null
+                if (!numero.isNullOrBlank() && !foto.isNullOrBlank()) {
+                    risultato[FotoNumeroManager.normalizza(numero)] = foto
+                }
+            }
+        }
+        return risultato
+    }
+
+    private fun mostraPrimaFotoValida(
+        immagine: ImageView,
+        iniziale: TextView,
+        candidati: List<String>
+    ) {
+        immagine.visibility = View.GONE
+        iniziale.visibility = View.VISIBLE
+        for (candidato in candidati) {
+            try {
+                immagine.setImageURI(null)
+                immagine.setImageURI(Uri.parse(candidato))
+                if (immagine.drawable != null) {
+                    immagine.visibility = View.VISIBLE
+                    iniziale.visibility = View.GONE
+                    return
+                }
+            } catch (_: Exception) {
+            }
         }
     }
 
