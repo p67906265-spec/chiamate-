@@ -48,28 +48,52 @@ class SmsAdapter(
 
         holder.itemView.setOnLongClickListener {
             val context = holder.itemView.context
-            AlertDialog.Builder(context)
-                .setTitle("Eliminare conversazione")
-                .setMessage("Eliminare tutti i messaggi con ${sms.mittente}?")
-                .setPositiveButton("Elimina") { _, _ ->
-                    val eliminati = eliminaConversazione(context, sms.numero)
-                    if (eliminati > 0) {
-                        Toast.makeText(context, "Conversazione eliminata", Toast.LENGTH_SHORT).show()
-                        onEliminato()
-                    } else if (eliminati == ERRORE_PERMESSO) {
-                        mostraRichiestaSmsPredefinita(context)
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Nessun messaggio trovato da eliminare.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
+            mostraConfermaEliminazione(context, sms.mittente) {
+                val eliminati = eliminaConversazione(context, sms.numero)
+                if (eliminati > 0) {
+                    Toast.makeText(context, "Conversazione eliminata", Toast.LENGTH_SHORT).show()
+                    onEliminato()
+                } else if (eliminati == ERRORE_PERMESSO) {
+                    mostraRichiestaSmsPredefinita(context)
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Nessun messaggio trovato da eliminare.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-                .setNegativeButton("Annulla", null)
-                .show()
+            }
             true
         }
+    }
+
+    private fun mostraConfermaEliminazione(
+        context: Context,
+        mittente: String,
+        conferma: () -> Unit
+    ) {
+        val dialog = android.app.Dialog(context)
+        dialog.setContentView(R.layout.dialog_conferma_eliminazione)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.findViewById<TextView>(R.id.txtTitoloConferma).text = "Eliminare conversazione?"
+        dialog.findViewById<TextView>(R.id.txtMessaggioConferma).text =
+            "Saranno eliminati tutti i messaggi con $mittente."
+        dialog.findViewById<TextView>(R.id.btnConfermaElimina).apply {
+            text = "Elimina"
+            setOnClickListener {
+                dialog.dismiss()
+                conferma()
+            }
+        }
+        dialog.findViewById<TextView>(R.id.btnConfermaAnnulla).setOnClickListener {
+            dialog.dismiss()
+        }
+        ColoriTesto.applica(dialog.findViewById(R.id.pannelloConferma))
+        dialog.show()
+        dialog.window?.setLayout(
+            (context.resources.displayMetrics.widthPixels * 0.88f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun eliminaConversazione(context: Context, numero: String): Int {
