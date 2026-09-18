@@ -21,7 +21,10 @@ class BloccoChiamateService : CallScreeningService() {
             daBloccare = true
         }
 
-        if (!daBloccare && !nascosto && numero != null) {
+        val numeroConsentito = !nascosto && numero != null &&
+            Impostazioni.isNumeroConsentito(this, numero)
+
+        if (!daBloccare && !numeroConsentito && !nascosto && numero != null) {
             if (Impostazioni.numeroConPrefissoBloccato(this, numero)) {
                 daBloccare = true
             }

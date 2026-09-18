@@ -1,5 +1,6 @@
 package com.paolo.gestionechiamate
 
+import android.content.Intent
 import android.os.Bundle
 import android.provider.CallLog
 import android.provider.ContactsContract
@@ -30,6 +31,8 @@ class DettaglioChiamateActivity : AppCompatActivity() {
     }
 
     private var numero: String = ""
+    private var numeroInRubrica = false
+    private var numeroBloccatoNelloStorico = false
 
     private val scegliFoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null && numero.isNotBlank()) {
@@ -70,17 +73,67 @@ class DettaglioChiamateActivity : AppCompatActivity() {
             ChiamaHelper.chiama(this, numero)
         }
 
+        findViewById<TextView>(R.id.btnSalvaContatto).setOnClickListener {
+            salvaInRubrica()
+        }
+
+        findViewById<TextView>(R.id.btnSbloccaNumero).setOnClickListener {
+            val giaConsentito = Impostazioni.isNumeroConsentito(this, numero)
+            Impostazioni.setNumeroConsentito(this, numero, !giaConsentito)
+            Toast.makeText(
+                this,
+                if (giaConsentito) "Sblocco rimosso" else "Numero sbloccato: le prossime chiamate saranno consentite",
+                Toast.LENGTH_LONG
+            ).show()
+            aggiornaAzioniNumero()
+        }
+
         lifecycleScope.launch {
             val nomeRubrica = withContext(Dispatchers.IO) { cercaNomeInRubrica(numero) }
+            numeroInRubrica = nomeRubrica != null
             if (nomeRubrica != null) {
                 txtNome.text = nomeRubrica
                 txtIniziale.text = nomeRubrica.take(1).uppercase()
             }
 
             val storico = withContext(Dispatchers.IO) { caricaStorico(numero) }
+            numeroBloccatoNelloStorico = storico.any { it.tipo == CallLog.Calls.BLOCKED_TYPE }
             recycler.adapter = DettaglioChiamataAdapter(storico)
+            aggiornaAzioniNumero()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        if (numero.isNotBlank()) {
+            lifecycleScope.launch {
+                numeroInRubrica = withContext(Dispatchers.IO) { cercaNomeInRubrica(numero) != null }
+                aggiornaAzioniNumero()
+            }
+        }
+    }
+
+    private fun salvaInRubrica() {
+        if (!numeroValido()) return
+        val intent = Intent(Intent.ACTION_INSERT).apply {
+            type = ContactsContract.Contacts.CONTENT_TYPE
+            putExtra(ContactsContract.Intents.Insert.PHONE, numero)
+        }
+        startActivity(intent)
+    }
+
+    private fun aggiornaAzioniNumero() {
+        val valido = numeroValido()
+        findViewById<TextView>(R.id.btnSalvaContatto).visibility =
+            if (valido && !numeroInRubrica) View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.btnSbloccaNumero).apply {
+            val consentito = Impostazioni.isNumeroConsentito(this@DettaglioChiamateActivity, numero)
+            visibility = if (valido && (numeroBloccatoNelloStorico || consentito)) View.VISIBLE else View.GONE
+            text = if (consentito) "Rimuovi sblocco" else "Sblocca numero"
+        }
+    }
+
+    private fun numeroValido(): Boolean = numero.isNotBlank() && !numero.startsWith("-")
 
     private fun mostraFotoAssociata() {
         val immagine = findViewById<ImageView>(R.id.imgFotoNumero)

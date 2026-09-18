@@ -16,6 +16,7 @@ object Impostazioni {
     private const val KEY_MESSAGGIO_RIFIUTO = "messaggio_rifiuto"
     private const val KEY_BLOCCO_PREFISSI_ATTIVO = "blocco_prefissi_attivo"
     private const val KEY_PREFISSI_BLOCCATI = "prefissi_bloccati"
+    private const val KEY_NUMERI_CONSENTITI = "numeri_consentiti"
     const val MESSAGGIO_RIFIUTO_PREDEFINITO = "Sono occupato, ti richiamo dopo"
     const val TEMA_SISTEMA = 2
 
@@ -105,6 +106,30 @@ object Impostazioni {
         if (!isBloccoPrefissiAttivo(context)) return false
         val nazionale = normalizzaNumeroItaliano(numero) ?: return false
         return getPrefissiBloccati(context).any { nazionale.startsWith(it.prefisso) }
+    }
+
+    fun isNumeroConsentito(context: Context, numero: String): Boolean {
+        val normalizzato = normalizzaNumeroPerConfronto(numero)
+        if (normalizzato.isBlank()) return false
+        return prefs(context).getStringSet(KEY_NUMERI_CONSENTITI, emptySet()).orEmpty()
+            .contains(normalizzato)
+    }
+
+    fun setNumeroConsentito(context: Context, numero: String, consentito: Boolean) {
+        val normalizzato = normalizzaNumeroPerConfronto(numero)
+        if (normalizzato.isBlank()) return
+        val numeri = prefs(context).getStringSet(KEY_NUMERI_CONSENTITI, emptySet())
+            .orEmpty().toMutableSet()
+        if (consentito) numeri.add(normalizzato) else numeri.remove(normalizzato)
+        prefs(context).edit().putStringSet(KEY_NUMERI_CONSENTITI, numeri).apply()
+    }
+
+    private fun normalizzaNumeroPerConfronto(numero: String): String {
+        var cifre = numero.filter(Char::isDigit)
+        if (cifre.startsWith("0039")) cifre = cifre.removePrefix("0039")
+        else if (numero.trim().startsWith("+39")) cifre = cifre.removePrefix("39")
+        else if (cifre.startsWith("39") && cifre.length > 10) cifre = cifre.removePrefix("39")
+        return cifre
     }
 
     private fun salvaPrefissi(context: Context, lista: List<PrefissoBloccato>) {
