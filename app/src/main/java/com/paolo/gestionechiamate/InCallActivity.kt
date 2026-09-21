@@ -89,6 +89,13 @@ class InCallActivity : AppCompatActivity() {
         val btnRispondi = findViewById<ImageButton>(R.id.btnRispondi)
         val btnRifiuta = findViewById<ImageButton>(R.id.btnRifiuta)
         val btnRifiutaMessaggio = findViewById<ImageButton>(R.id.btnRifiutaMessaggio)
+        val btnCancellaDigitato = findViewById<ImageButton>(R.id.btnCancellaDigitato)
+
+        fun aggiornaNumeroDigitato() {
+            txtDigitato.text = digitato.toString()
+            btnCancellaDigitato.visibility =
+                if (tastierinoVisibile && digitato.isNotEmpty()) View.VISIBLE else View.INVISIBLE
+        }
 
         val call = MyInCallService.chiamataAttiva
         numeroChiamante = call?.details?.handle?.schemeSpecificPart ?: ""
@@ -138,16 +145,27 @@ class InCallActivity : AppCompatActivity() {
 
         DialpadKeys.build(this, grid, keySizeDp = 52, stileScuro = true) { cifra ->
             digitato.append(cifra)
-            txtDigitato.text = digitato.toString()
+            aggiornaNumeroDigitato()
             val c = MyInCallService.chiamataAttiva
             c?.playDtmfTone(cifra[0])
             c?.stopDtmfTone()
+        }
+
+        btnCancellaDigitato.setOnClickListener {
+            if (digitato.isNotEmpty()) digitato.deleteCharAt(digitato.lastIndex)
+            aggiornaNumeroDigitato()
+        }
+        btnCancellaDigitato.setOnLongClickListener {
+            digitato.clear()
+            aggiornaNumeroDigitato()
+            true
         }
 
         btnTastierino.setOnClickListener {
             tastierinoVisibile = !tastierinoVisibile
             grid.visibility = if (tastierinoVisibile) View.VISIBLE else View.GONE
             contenitoreFotoChiamante.visibility = if (tastierinoVisibile) View.GONE else View.VISIBLE
+            aggiornaNumeroDigitato()
             btnTastierino.setBackgroundResource(
                 if (tastierinoVisibile) R.drawable.bg_circle_call else R.drawable.bg_dialpad_key
             )
