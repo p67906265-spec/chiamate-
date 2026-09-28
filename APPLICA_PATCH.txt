@@ -1,0 +1,10 @@
+Patch Gestione Chiamate - notifiche SMS
+
+Sostituisce SmsReceiver.kt per aggiungere:
+- notifica alla ricezione di un SMS
+- suoneria notifiche/SMS predefinita del telefono
+- vibrazione
+- testo completo nella notifica
+- apertura dell'app toccando la notifica
+
+Il Manifest contiene gia' RECEIVE_SMS e POST_NOTIFICATIONS, quindi non richiede altre modifiche.
