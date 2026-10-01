@@ -1,6 +1,7 @@
 package com.paolo.gestionechiamate
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +12,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
+import android.provider.Telephony
 import android.telecom.Call
 import android.telecom.VideoProfile
 import android.view.View
@@ -265,29 +267,34 @@ class InCallActivity : AppCompatActivity() {
     }
 
     private fun rifiutaConMessaggio() {
-        if (!InfoNumero.isCellulareItaliano(numeroChiamante)) {
-            Toast.makeText(
-                this,
-                "Il messaggio può essere inviato soltanto a un cellulare italiano",
-                Toast.LENGTH_LONG
-            ).show()
+        MyInCallService.chiamataAttiva?.reject(false, null)
+        if (numeroChiamante.isBlank()) {
+            Toast.makeText(this, "Chiamata rifiutata: numero non disponibile", Toast.LENGTH_LONG).show()
+            finish()
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            Toast.makeText(this, "Permesso SMS non concesso", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Chiamata rifiutata, ma manca il permesso SMS", Toast.LENGTH_LONG).show()
+            finish()
             return
         }
-        MyInCallService.chiamataAttiva?.reject(false, null)
         try {
+            val messaggio = Impostazioni.getMessaggioRifiuto(this)
             @Suppress("DEPRECATION")
-            SmsManager.getDefault().sendTextMessage(
-                numeroChiamante,
-                null,
-                Impostazioni.getMessaggioRifiuto(this),
-                null,
-                null
+            val gestore = SmsManager.getDefault()
+            val parti = gestore.divideMessage(messaggio)
+            if (parti.size > 1) gestore.sendMultipartTextMessage(numeroChiamante, null, parti, null, null)
+            else gestore.sendTextMessage(numeroChiamante, null, messaggio, null, null)
+            contentResolver.insert(
+                Telephony.Sms.Sent.CONTENT_URI,
+                ContentValues().apply {
+                    put(Telephony.Sms.ADDRESS, numeroChiamante)
+                    put(Telephony.Sms.BODY, messaggio)
+                    put(Telephony.Sms.DATE, System.currentTimeMillis())
+                    put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+                }
             )
             Toast.makeText(this, "Chiamata rifiutata e messaggio inviato", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
@@ -296,35 +303,8 @@ class InCallActivity : AppCompatActivity() {
         finish()
     }
 
-    private data class DatiRubrica(val nome: String?, val fotoUri: String?)
-
-    private fun cercaDatiInRubrica(numero: String): DatiRubrica {
-        val cifreNumero = soloCifre(numero)
-        val cursor = contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.PHOTO_URI
-            ),
-            null, null, null
-        )
-        cursor?.use {
-            val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val idxFoto = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
-            while (it.moveToNext()) {
-                val numeroRubrica = if (idxNum >= 0) it.getString(idxNum) else null
-                if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
-                    return DatiRubrica(
-                        if (idxNome >= 0) it.getString(idxNome) else null,
-                        if (idxFoto >= 0) it.getString(idxFoto) else null
-                    )
-                }
-            }
-        }
-        return DatiRubrica(null, null)
-    }
+    private fun cercaDatiInRubrica(numero: String): NumeroTelefono.Contatto =
+        NumeroTelefono.cercaContatto(this, numero) ?: NumeroTelefono.Contatto(null, null)
 
     private fun mostraFoto(uriTesto: String?) {
         if (uriTesto.isNullOrBlank()) return
@@ -340,12 +320,6 @@ class InCallActivity : AppCompatActivity() {
             immagine.visibility = View.GONE
             iniziale.visibility = View.VISIBLE
         }
-    }
-
-    private fun soloCifre(numero: String): String {
-        var cifre = numero.filter { it.isDigit() }
-        if (cifre.length > 10) cifre = cifre.takeLast(10)
-        return cifre
     }
 
     private fun aggiornaAspettoTelefono(bottone: ImageButton) {

@@ -61,33 +61,8 @@ class ComponiSmsActivity : AppCompatActivity() {
         }
     }
 
-    private fun soloCifre(numero: String): String {
-        var cifre = numero.filter { it.isDigit() }
-        if (cifre.length > 10) cifre = cifre.takeLast(10)
-        return cifre
-    }
-
     private fun cercaNomeInRubrica(numero: String): String? {
-        val cifreNumero = soloCifre(numero)
-        val cursor = contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
-            ),
-            null, null, null
-        )
-        cursor?.use {
-            val idxNome = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            val idxNum = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            while (it.moveToNext()) {
-                val numeroRubrica = if (idxNum >= 0) it.getString(idxNum) else null
-                if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
-                    return if (idxNome >= 0) it.getString(idxNome) else null
-                }
-            }
-        }
-        return null
+        return NumeroTelefono.cercaContatto(this, numero)?.nome
     }
 
     private fun caricaConversazione(numero: String) {
@@ -101,7 +76,6 @@ class ComponiSmsActivity : AppCompatActivity() {
     }
 
     private fun leggiConversazione(numero: String): List<MessaggioThread> {
-        val cifreNumero = soloCifre(numero)
         val lista = mutableListOf<MessaggioThread>()
         val cursor = contentResolver.query(
             Telephony.Sms.CONTENT_URI,
@@ -117,7 +91,7 @@ class ComponiSmsActivity : AppCompatActivity() {
             val idxTipo = it.getColumnIndex(Telephony.Sms.TYPE)
             while (it.moveToNext()) {
                 val indirizzo = if (idxAddr >= 0) it.getString(idxAddr) else null
-                if (indirizzo == null || soloCifre(indirizzo) != cifreNumero) continue
+                if (!NumeroTelefono.equivalenti(indirizzo, numero)) continue
 
                 val corpo = if (idxBody >= 0) it.getString(idxBody) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L

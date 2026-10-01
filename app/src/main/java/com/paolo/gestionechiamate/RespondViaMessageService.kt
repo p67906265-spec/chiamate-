@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.provider.Telephony
 import android.telephony.SmsManager
+import android.util.Log
 
 class RespondViaMessageService : Service() {
 
@@ -36,6 +37,7 @@ class RespondViaMessageService : Service() {
             }
             contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, valori)
         } catch (e: Exception) {
+            Log.w("RespondViaMessage", "Invio o salvataggio SMS non riuscito", e)
         }
     }
 }
