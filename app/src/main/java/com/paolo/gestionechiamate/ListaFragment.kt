@@ -447,11 +447,13 @@ class ListaFragment : Fragment() {
         val txtNumero = dialog.findViewById<TextView>(R.id.txtNumeroDialog)
         val btnBackspace = dialog.findViewById<android.widget.ImageButton>(R.id.btnBackspaceDialog)
         val grid = dialog.findViewById<android.widget.GridLayout>(R.id.gridTastiDialog)
+        val btnAggiungiRubrica = dialog.findViewById<TextView>(R.id.btnAggiungiRubricaDialog)
         val btnChiama = dialog.findViewById<android.widget.ImageButton>(R.id.btnChiamaDialog)
 
         fun aggiornaDisplay() {
             txtNumero.text = numero.toString()
             btnBackspace.visibility = if (numero.isNotEmpty()) View.VISIBLE else View.INVISIBLE
+            btnAggiungiRubrica.visibility = if (numero.isNotEmpty()) View.VISIBLE else View.INVISIBLE
         }
 
         DialpadKeys.build(requireContext(), grid, keySizeDp = 60, usaColoreTema = true) { cifra ->
@@ -474,6 +476,16 @@ class ListaFragment : Fragment() {
         btnChiama.setOnClickListener {
             if (numero.isNotEmpty()) {
                 ChiamaHelper.chiama(requireContext(), numero.toString())
+                dialog.dismiss()
+            }
+        }
+
+        btnAggiungiRubrica.setOnClickListener {
+            if (numero.isNotEmpty()) {
+                val intent = Intent(Intent.ACTION_INSERT, ContactsContract.Contacts.CONTENT_URI).apply {
+                    putExtra(ContactsContract.Intents.Insert.PHONE, numero.toString())
+                }
+                creaContatto.launch(intent)
                 dialog.dismiss()
             }
         }

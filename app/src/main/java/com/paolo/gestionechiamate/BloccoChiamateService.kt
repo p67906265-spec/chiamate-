@@ -1,7 +1,6 @@
 package com.paolo.gestionechiamate
 
 import android.provider.CallLog
-import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.CallScreeningService.CallResponse
@@ -28,10 +27,12 @@ class BloccoChiamateService : CallScreeningService() {
             if (Impostazioni.numeroConPrefissoBloccato(this, numero)) {
                 daBloccare = true
             }
-            if (Impostazioni.isBloccoNumeriStranieri(this) && isNumeroStraniero(numero)) {
+            if (Impostazioni.isBloccoNumeriStranieri(this) && NumeroTelefono.isStraniero(numero)) {
                 daBloccare = true
             }
-            if (!daBloccare && Impostazioni.isBloccoNonInRubrica(this) && !isNumeroInRubrica(numero)) {
+            if (!daBloccare && Impostazioni.isBloccoNonInRubrica(this) &&
+                !NumeroTelefono.isInRubrica(this, numero)
+            ) {
                 daBloccare = true
             }
         }
@@ -46,38 +47,4 @@ class BloccoChiamateService : CallScreeningService() {
         respondToCall(callDetails, risposta.build())
     }
 
-    private fun isNumeroStraniero(numero: String): Boolean {
-        val pulito = numero.trim()
-        if (pulito.startsWith("+")) {
-            return !(pulito.startsWith("+39"))
-        }
-        if (pulito.startsWith("0039")) return false
-        if (pulito.startsWith("00")) return true
-        return false
-    }
-
-    private fun isNumeroInRubrica(numero: String): Boolean {
-        val cifreNumero = soloCifre(numero)
-        val cursor = contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-            null, null, null
-        )
-        cursor?.use {
-            val idx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            while (it.moveToNext()) {
-                val numeroRubrica = if (idx >= 0) it.getString(idx) else null
-                if (numeroRubrica != null && soloCifre(numeroRubrica) == cifreNumero) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
-    private fun soloCifre(numero: String): String {
-        var cifre = numero.filter { it.isDigit() }
-        if (cifre.length > 10) cifre = cifre.takeLast(10)
-        return cifre
-    }
 }

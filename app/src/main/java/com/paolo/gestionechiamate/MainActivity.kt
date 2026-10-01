@@ -44,16 +44,12 @@ class MainActivity : AppCompatActivity() {
         setupViewPager()
     }
 
-    override fun onResume() {
-        super.onResume()
-        (findViewById<ViewPager2>(R.id.viewPager).adapter as? PagerAdapter)?.notifyDataSetChanged()
-    }
-
     private fun setupViewPager() {
         val viewPager = findViewById<ViewPager2>(R.id.viewPager)
 
         viewPager.adapter = PagerAdapter(this)
         viewPager.offscreenPageLimit = 4
+        viewPager.isUserInputEnabled = false
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
         bottomNav.setOnItemSelectedListener { item ->
