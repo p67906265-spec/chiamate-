@@ -105,7 +105,8 @@ class InCallActivity : AppCompatActivity() {
         txtNome.text = numeroChiamante
         findViewById<TextView>(R.id.txtInizialeChiamante).text =
             numeroChiamante.firstOrNull()?.uppercase() ?: "?"
-        findViewById<TextView>(R.id.txtTipoNumero).text = InfoNumero.descrizione(numeroChiamante)
+        val txtTipoNumero = findViewById<TextView>(R.id.txtTipoNumero)
+        txtTipoNumero.text = InfoNumero.descrizione(numeroChiamante)
         call?.registerCallback(callback)
         call?.let {
             aggiornaStato(it.state)
@@ -128,6 +129,16 @@ class InCallActivity : AppCompatActivity() {
                 }
                 if (fotoPersonalizzata == null) {
                     mostraFoto(dati.fotoUri)
+                }
+            }
+            if (InfoNumero.isFissoItaliano(numeroChiamante)) {
+                lifecycleScope.launch {
+                    val localita = withContext(Dispatchers.IO) {
+                        LocalitaNumero.cerca(numeroChiamante)
+                    }
+                    if (!localita.isNullOrBlank()) {
+                        txtTipoNumero.text = "Rete fissa • $localita"
+                    }
                 }
             }
         }

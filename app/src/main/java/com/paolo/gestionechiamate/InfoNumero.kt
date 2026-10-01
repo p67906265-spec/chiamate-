@@ -68,6 +68,14 @@ object InfoNumero {
     fun isCellulareItaliano(numero: String): Boolean =
         numeroNazionale(numero)?.matches(Regex("3\\d{8,10}")) == true
 
+    fun isFissoItaliano(numero: String): Boolean =
+        numeroNazionale(numero)?.startsWith('0') == true
+
+    fun e164Italiano(numero: String): String? {
+        val nazionale = numeroNazionale(numero) ?: return null
+        return nazionale.takeIf { it.isNotBlank() }?.let { "+39$it" }
+    }
+
     private fun numeroNazionale(numero: String): String? {
         val originale = numero.trim()
         if (originale.isBlank() || originale == "-1" || originale == "-2") return ""

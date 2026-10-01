@@ -173,4 +173,5 @@ object Impostazioni {
             valore.trim().ifBlank { MESSAGGIO_RIFIUTO_PREDEFINITO }
         ).apply()
     }
+
 }
