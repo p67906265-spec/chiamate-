@@ -93,7 +93,7 @@
                 android:background="@drawable/bg_circle_primary"
                 android:contentDescription="@string/chiama"
                 android:src="@android:drawable/ic_menu_call"
-                android:tint="@color/white" />
+                android:tint="@color/primary" />
 
         </LinearLayout>
 

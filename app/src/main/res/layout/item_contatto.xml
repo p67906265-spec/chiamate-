@@ -4,11 +4,15 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:background="?attr/selectableItemBackground"
-    android:paddingStart="16dp"
-    android:paddingTop="14dp"
+    android:background="@drawable/bg_item_futuro"
+    android:layout_marginStart="6dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:paddingStart="18dp"
+    android:paddingTop="10dp"
     android:paddingEnd="8dp"
-    android:paddingBottom="14dp">
+    android:paddingBottom="10dp">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -43,7 +47,7 @@
         android:layout_height="40dp"
         android:background="@drawable/bg_circle_primary"
         android:src="@android:drawable/ic_menu_call"
-        android:tint="@color/white"
+        android:tint="@color/primary"
         android:contentDescription="@string/chiama" />
 
 </LinearLayout>

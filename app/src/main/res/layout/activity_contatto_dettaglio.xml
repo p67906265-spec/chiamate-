@@ -10,9 +10,9 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/primary"
+        android:background="@drawable/bg_toolbar_futuro"
         app:navigationIcon="@android:drawable/ic_menu_close_clear_cancel"
-        app:titleTextColor="@color/white">
+        app:titleTextColor="@color/primary">
 
         <ImageButton
             android:id="@+id/btnAzioni"

@@ -10,9 +10,9 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/primary"
+        android:background="@drawable/bg_toolbar_futuro"
         app:navigationIcon="@android:drawable/ic_menu_close_clear_cancel"
-        app:titleTextColor="@color/white" />
+        app:titleTextColor="@color/primary" />
 
     <EditText
         android:id="@+id/editNumero"
@@ -27,7 +27,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0" />
+        android:background="@color/border" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerThread"

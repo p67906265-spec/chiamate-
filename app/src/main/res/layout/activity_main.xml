@@ -9,7 +9,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary"
+        android:background="@drawable/bg_toolbar_futuro"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
 
         <androidx.appcompat.widget.Toolbar
@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="@string/app_name"
-            app:titleTextColor="@color/white" />
+            app:titleTextColor="@color/primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -31,7 +31,7 @@
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bottom_nav_background"
+        android:background="@drawable/bg_nav_barra"
         app:itemIconTint="@color/selector_nav_colore"
         app:itemTextColor="@color/selector_nav_colore"
         app:itemBackground="@drawable/selector_nav_item"
