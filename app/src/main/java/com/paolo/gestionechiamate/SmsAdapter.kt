@@ -17,8 +17,12 @@ import androidx.recyclerview.widget.RecyclerView
 
 class SmsAdapter(
     private val dati: List<Sms>,
-    private val onEliminato: () -> Unit
+    private val onEliminato: () -> Unit,
+    private val onSelezioneCambiata: (List<Sms>) -> Unit = {}
 ) : RecyclerView.Adapter<SmsAdapter.ViewHolder>() {
+
+    private val selezionate = linkedSetOf<Long>()
+    private var modalitaSelezione = false
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val txtMittente: TextView = view.findViewById(R.id.txtMittente)
@@ -40,7 +44,11 @@ class SmsAdapter(
         holder.txtData.text = sms.dataFormattata
         holder.txtNuovo.visibility = if (sms.nuovo) View.VISIBLE else View.GONE
         holder.itemView.setBackgroundResource(
-            if (sms.nuovo) R.drawable.bg_item_uscita else R.drawable.bg_item_letto
+            when {
+                sms.id in selezionate -> R.drawable.bg_chiamata_selezionata
+                sms.nuovo -> R.drawable.bg_item_uscita
+                else -> R.drawable.bg_item_letto
+            }
         )
         holder.txtMittente.setTypeface(
             null, if (sms.nuovo) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
@@ -48,6 +56,10 @@ class SmsAdapter(
         ColoriTesto.applica(holder.itemView)
 
         holder.itemView.setOnClickListener {
+            if (modalitaSelezione) {
+                cambiaSelezione(sms.id)
+                return@setOnClickListener
+            }
             val context = holder.itemView.context
             val intent = android.content.Intent(context, ComponiSmsActivity::class.java)
             intent.putExtra(ComponiSmsActivity.EXTRA_NUMERO, sms.numero)
@@ -55,37 +67,82 @@ class SmsAdapter(
         }
 
         holder.itemView.setOnLongClickListener {
-            val context = holder.itemView.context
-            mostraConfermaEliminazione(context, sms.mittente) {
-                val eliminati = eliminaConversazione(context, sms.numero)
-                if (eliminati > 0) {
-                    Toast.makeText(context, "Conversazione eliminata", Toast.LENGTH_SHORT).show()
-                    onEliminato()
-                } else if (eliminati == ERRORE_PERMESSO) {
-                    mostraRichiestaSmsPredefinita(context)
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Nessun messaggio trovato da eliminare.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+            modalitaSelezione = true
+            cambiaSelezione(sms.id)
             true
         }
     }
 
+    fun annullaSelezione() {
+        modalitaSelezione = false
+        selezionate.clear()
+        notifyDataSetChanged()
+        onSelezioneCambiata(emptyList())
+    }
+
+    private fun cambiaSelezione(id: Long) {
+        if (id in selezionate) selezionate.remove(id) else selezionate.add(id)
+        if (selezionate.isEmpty()) modalitaSelezione = false
+        notifyDataSetChanged()
+        onSelezioneCambiata(dati.filter { it.id in selezionate })
+    }
+
+    fun chiediEliminaSelezionati(context: Context) {
+        val scelti = dati.filter { it.id in selezionate }
+        if (scelti.isEmpty()) return
+        val ids = scelti.map { it.id }
+        mostraConfermaEliminazione(
+            context,
+            if (ids.size == 1) "Eliminare il messaggio?" else "Eliminare i messaggi?",
+            if (ids.size == 1) "Verrà eliminato il messaggio selezionato."
+            else "Verranno eliminati i ${ids.size} messaggi selezionati."
+        ) {
+            val eliminati = eliminaMessaggi(context, ids)
+            if (eliminati > 0) {
+                Toast.makeText(
+                    context,
+                    if (eliminati == 1) "1 messaggio eliminato" else "$eliminati messaggi eliminati",
+                    Toast.LENGTH_SHORT
+                ).show()
+                modalitaSelezione = false
+                selezionate.clear()
+                onSelezioneCambiata(emptyList())
+                onEliminato()
+            } else if (eliminati == ERRORE_PERMESSO) {
+                mostraRichiestaSmsPredefinita(context)
+            } else {
+                Toast.makeText(context, "Nessun messaggio eliminato.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun eliminaMessaggi(context: Context, ids: List<Long>): Int {
+        var eliminati = 0
+        try {
+            for (id in ids) {
+                eliminati += context.contentResolver.delete(
+                    ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id), null, null
+                )
+            }
+        } catch (_: SecurityException) {
+            return if (eliminati > 0) eliminati else ERRORE_PERMESSO
+        } catch (_: Exception) {
+            return eliminati
+        }
+        return eliminati
+    }
+
     private fun mostraConfermaEliminazione(
         context: Context,
-        mittente: String,
+        titolo: String,
+        messaggio: String,
         conferma: () -> Unit
     ) {
         val dialog = android.app.Dialog(context)
         dialog.setContentView(R.layout.dialog_conferma_eliminazione)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.findViewById<TextView>(R.id.txtTitoloConferma).text = "Eliminare conversazione?"
-        dialog.findViewById<TextView>(R.id.txtMessaggioConferma).text =
-            "Saranno eliminati tutti i messaggi con $mittente."
+        dialog.findViewById<TextView>(R.id.txtTitoloConferma).text = titolo
+        dialog.findViewById<TextView>(R.id.txtMessaggioConferma).text = messaggio
         dialog.findViewById<TextView>(R.id.btnConfermaElimina).apply {
             text = "Elimina"
             setOnClickListener {
@@ -102,48 +159,6 @@ class SmsAdapter(
             (context.resources.displayMetrics.widthPixels * 0.88f).toInt(),
             android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
-    }
-
-    private fun eliminaConversazione(context: Context, numero: String): Int {
-        val cifreNumero = soloCifre(numero)
-        val cursor = context.contentResolver.query(
-            Telephony.Sms.CONTENT_URI,
-            arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.THREAD_ID),
-            null, null, null
-        )
-        val idsDaEliminare = mutableListOf<Long>()
-        val threadDaEliminare = mutableSetOf<Long>()
-        cursor?.use {
-            val idxId = it.getColumnIndex(Telephony.Sms._ID)
-            val idxAddr = it.getColumnIndex(Telephony.Sms.ADDRESS)
-            val idxThread = it.getColumnIndex(Telephony.Sms.THREAD_ID)
-            while (it.moveToNext()) {
-                val indirizzo = if (idxAddr >= 0) it.getString(idxAddr) else null
-                if (indirizzo != null && soloCifre(indirizzo) == cifreNumero) {
-                    if (idxId >= 0) idsDaEliminare.add(it.getLong(idxId))
-                    if (idxThread >= 0) threadDaEliminare.add(it.getLong(idxThread))
-                }
-            }
-        }
-        var eliminati = 0
-        try {
-            for (threadId in threadDaEliminare) {
-                eliminati += context.contentResolver.delete(
-                    Uri.parse("content://mms-sms/conversations/$threadId"), null, null
-                )
-            }
-            if (eliminati > 0) return eliminati
-            for (id in idsDaEliminare) {
-                eliminati += context.contentResolver.delete(
-                    ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id), null, null
-                )
-            }
-        } catch (_: SecurityException) {
-            return ERRORE_PERMESSO
-        } catch (_: Exception) {
-            return 0
-        }
-        return eliminati
     }
 
     private fun mostraRichiestaSmsPredefinita(context: Context) {
@@ -165,12 +180,6 @@ class SmsAdapter(
                 if (intent != null) context.startActivity(intent)
             }
             .show()
-    }
-
-    private fun soloCifre(numero: String): String {
-        var cifre = numero.filter { it.isDigit() }
-        if (cifre.length > 10) cifre = cifre.takeLast(10)
-        return cifre
     }
 
     override fun getItemCount() = dati.size

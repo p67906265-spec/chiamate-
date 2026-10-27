@@ -56,6 +56,7 @@ class ListaFragment : Fragment() {
     private var testoVuotoPagina: TextView? = null
     private var indiceAlfabeticoPagina: LinearLayout? = null
     private var adapterChiamate: ChiamataAdapter? = null
+    private var adapterSms: SmsAdapter? = null
     private var gruppiChiamateSelezionati: List<VoceChiamata> = emptyList()
     private var azioneDopoPermessoScrittura: (() -> Unit)? = null
 
@@ -163,6 +164,12 @@ class ListaFragment : Fragment() {
             btnNuovoMessaggio.setOnClickListener {
                 mostraSceltaNuovoMessaggio()
             }
+            view.findViewById<TextView>(R.id.btnAnnullaSelezione).setOnClickListener {
+                adapterSms?.annullaSelezione()
+            }
+            view.findViewById<TextView>(R.id.btnEliminaSelezione).setOnClickListener {
+                adapterSms?.chiediEliminaSelezionati(requireContext())
+            }
         }
 
         return view
@@ -175,6 +182,7 @@ class ListaFragment : Fragment() {
 
     override fun onDestroyView() {
         adapterChiamate = null
+        adapterSms = null
         gruppiChiamateSelezionati = emptyList()
         recyclerPagina = null
         testoVuotoPagina = null
@@ -220,7 +228,11 @@ class ListaFragment : Fragment() {
                         TIPO_CHIAMATE -> ChiamataAdapter(dati as List<VoceChiamata>) { gruppi ->
                             aggiornaBarraSelezione(gruppi)
                         }.also { adapterChiamate = it }
-                        else -> SmsAdapter(dati as List<Sms>) { ricaricaSms(recycler, txtVuoto) }
+                        else -> SmsAdapter(
+                            dati as List<Sms>,
+                            { ricaricaSms(recycler, txtVuoto) },
+                            { scelti -> aggiornaBarraSelezioneSms(scelti) }
+                        ).also { adapterSms = it }
                     }
                 }
             }
@@ -237,6 +249,17 @@ class ListaFragment : Fragment() {
         root.findViewById<TextView>(R.id.txtConteggioSelezione).text =
             if (gruppi.size == 1) "1 gruppo selezionato"
             else "${gruppi.size} gruppi selezionati"
+    }
+
+    private fun aggiornaBarraSelezioneSms(scelti: List<Sms>) {
+        val root = view ?: return
+        root.findViewById<View>(R.id.barraSelezioneChiamate).visibility =
+            if (scelti.isEmpty()) View.GONE else View.VISIBLE
+        root.findViewById<View>(R.id.btnNuovoMessaggio).visibility =
+            if (scelti.isEmpty()) View.VISIBLE else View.GONE
+        root.findViewById<TextView>(R.id.txtConteggioSelezione).text =
+            if (scelti.size == 1) "1 messaggio selezionato"
+            else "${scelti.size} messaggi selezionati"
     }
 
     private fun confermaEliminaSelezionate() {
@@ -429,7 +452,11 @@ class ListaFragment : Fragment() {
             } else {
                 txtVuoto.visibility = View.GONE
                 recycler.visibility = View.VISIBLE
-                recycler.adapter = SmsAdapter(dati) { ricaricaSms(recycler, txtVuoto) }
+                recycler.adapter = SmsAdapter(
+                    dati,
+                    { ricaricaSms(recycler, txtVuoto) },
+                    { scelti -> aggiornaBarraSelezioneSms(scelti) }
+                ).also { adapterSms = it }
             }
         }
     }
@@ -638,12 +665,13 @@ class ListaFragment : Fragment() {
         val lista = mutableListOf<Sms>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             Telephony.Sms.CONTENT_URI,
-            arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.READ, Telephony.Sms.TYPE),
+            arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.READ, Telephony.Sms.TYPE),
             null, null,
             Telephony.Sms.DATE + " DESC"
         )
         val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY)
         cursor?.use {
+            val idxId = it.getColumnIndex(Telephony.Sms._ID)
             val idxAddr = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val idxBody = it.getColumnIndex(Telephony.Sms.BODY)
             val idxData = it.getColumnIndex(Telephony.Sms.DATE)
@@ -657,7 +685,7 @@ class ListaFragment : Fragment() {
                 val nuovo = idxRead >= 0 && idxTipo >= 0 &&
                     it.getInt(idxRead) == 0 && it.getInt(idxTipo) == Telephony.Sms.MESSAGE_TYPE_INBOX
                 val nomeVisualizzato = mappaRubrica[normalizzaNumero(numero ?: "")] ?: numero ?: "?"
-                lista.add(Sms(nomeVisualizzato, numero ?: "?", corpo ?: "", formato.format(Date(data)), nuovo))
+                lista.add(Sms(nomeVisualizzato, numero ?: "?", corpo ?: "", formato.format(Date(data)), nuovo, if (idxId >= 0) it.getLong(idxId) else 0L))
                 count++
             }
         }
@@ -687,5 +715,6 @@ data class Sms(
     val numero: String,
     val corpo: String,
     val dataFormattata: String,
-    val nuovo: Boolean = false
+    val nuovo: Boolean = false,
+    val id: Long = 0L
 )
