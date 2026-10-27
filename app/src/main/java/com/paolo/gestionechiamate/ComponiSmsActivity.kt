@@ -41,6 +41,7 @@ class ComponiSmsActivity : AppCompatActivity() {
         if (!numeroDaIntent.isNullOrBlank()) {
             editNumero.setText(numeroDaIntent)
             caricaConversazione(numeroDaIntent)
+            scope.launch { withContext(Dispatchers.IO) { segnaComeLetti(numeroDaIntent) } }
             scope.launch {
                 val nome = withContext(Dispatchers.IO) { cercaNomeInRubrica(numeroDaIntent) }
                 if (nome != null) {
@@ -125,5 +126,32 @@ class ComponiSmsActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_NUMERO = "numero"
+    }
+
+    private fun segnaComeLetti(numero: String) {
+        try {
+            val cifre = numero.filter { it.isDigit() }.takeLast(10)
+            if (cifre.isEmpty()) return
+            val ids = mutableListOf<Long>()
+            contentResolver.query(
+                Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS),
+                Telephony.Sms.READ + " = 0", null, null
+            )?.use {
+                while (it.moveToNext()) {
+                    val indirizzo = it.getString(1) ?: continue
+                    if (indirizzo.filter { c -> c.isDigit() }.takeLast(10) == cifre) ids.add(it.getLong(0))
+                }
+            }
+            val valori = ContentValues().apply { put(Telephony.Sms.READ, 1) }
+            for (id in ids) {
+                contentResolver.update(
+                    android.content.ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id),
+                    valori, null, null
+                )
+            }
+        } catch (_: Exception) {
+            // Senza il ruolo di app SMS predefinita Android può rifiutare la modifica
+        }
     }
 }

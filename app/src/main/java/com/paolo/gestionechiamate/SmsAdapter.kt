@@ -24,6 +24,7 @@ class SmsAdapter(
         val txtMittente: TextView = view.findViewById(R.id.txtMittente)
         val txtCorpo: TextView = view.findViewById(R.id.txtCorpo)
         val txtData: TextView = view.findViewById(R.id.txtData)
+        val txtNuovo: TextView = view.findViewById(R.id.txtNuovo)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -37,6 +38,13 @@ class SmsAdapter(
         holder.txtMittente.text = sms.mittente
         holder.txtCorpo.text = sms.corpo
         holder.txtData.text = sms.dataFormattata
+        holder.txtNuovo.visibility = if (sms.nuovo) View.VISIBLE else View.GONE
+        holder.itemView.setBackgroundResource(
+            if (sms.nuovo) R.drawable.bg_item_uscita else R.drawable.bg_item_letto
+        )
+        holder.txtMittente.setTypeface(
+            null, if (sms.nuovo) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
+        )
         ColoriTesto.applica(holder.itemView)
 
         holder.itemView.setOnClickListener {

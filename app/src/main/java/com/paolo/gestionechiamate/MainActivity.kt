@@ -92,6 +92,33 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    override fun onResume() {
+        super.onResume()
+        aggiornaBadgeSms()
+    }
+
+    private fun aggiornaBadgeSms() {
+        try {
+            val nav = findViewById<BottomNavigationView>(R.id.bottomNav) ?: return
+            var nuovi = 0
+            contentResolver.query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(android.provider.Telephony.Sms._ID),
+                android.provider.Telephony.Sms.READ + " = 0", null, null
+            )?.use { nuovi = it.count }
+            if (nuovi > 0) {
+                val badge = nav.getOrCreateBadge(R.id.nav_messaggi)
+                badge.isVisible = true
+                badge.number = nuovi
+                badge.backgroundColor = androidx.core.content.ContextCompat.getColor(this, R.color.viola)
+                badge.badgeTextColor = androidx.core.content.ContextCompat.getColor(this, R.color.on_primary)
+            } else {
+                nav.removeBadge(R.id.nav_messaggi)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         return true

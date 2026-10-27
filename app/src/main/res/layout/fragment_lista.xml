@@ -111,7 +111,7 @@
             android:paddingStart="8dp"
             android:paddingTop="8dp"
             android:paddingEnd="32dp"
-            android:paddingBottom="8dp" />
+            android:paddingBottom="96dp" />
 
     </LinearLayout>
 

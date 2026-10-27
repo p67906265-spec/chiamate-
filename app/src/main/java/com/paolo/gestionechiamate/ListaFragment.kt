@@ -638,7 +638,7 @@ class ListaFragment : Fragment() {
         val lista = mutableListOf<Sms>()
         val cursor: Cursor? = requireContext().contentResolver.query(
             Telephony.Sms.CONTENT_URI,
-            arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE),
+            arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.READ, Telephony.Sms.TYPE),
             null, null,
             Telephony.Sms.DATE + " DESC"
         )
@@ -647,13 +647,17 @@ class ListaFragment : Fragment() {
             val idxAddr = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val idxBody = it.getColumnIndex(Telephony.Sms.BODY)
             val idxData = it.getColumnIndex(Telephony.Sms.DATE)
+            val idxRead = it.getColumnIndex(Telephony.Sms.READ)
+            val idxTipo = it.getColumnIndex(Telephony.Sms.TYPE)
             var count = 0
             while (it.moveToNext() && count < 200) {
                 val numero = if (idxAddr >= 0) it.getString(idxAddr) else "?"
                 val corpo = if (idxBody >= 0) it.getString(idxBody) else ""
                 val data = if (idxData >= 0) it.getLong(idxData) else 0L
+                val nuovo = idxRead >= 0 && idxTipo >= 0 &&
+                    it.getInt(idxRead) == 0 && it.getInt(idxTipo) == Telephony.Sms.MESSAGE_TYPE_INBOX
                 val nomeVisualizzato = mappaRubrica[normalizzaNumero(numero ?: "")] ?: numero ?: "?"
-                lista.add(Sms(nomeVisualizzato, numero ?: "?", corpo ?: "", formato.format(Date(data))))
+                lista.add(Sms(nomeVisualizzato, numero ?: "?", corpo ?: "", formato.format(Date(data)), nuovo))
                 count++
             }
         }
@@ -678,4 +682,10 @@ data class VoceChiamata(
     val dataFormattata: String,
     val tipo: Int
 )
-data class Sms(val mittente: String, val numero: String, val corpo: String, val dataFormattata: String)
+data class Sms(
+    val mittente: String,
+    val numero: String,
+    val corpo: String,
+    val dataFormattata: String,
+    val nuovo: Boolean = false
+)
