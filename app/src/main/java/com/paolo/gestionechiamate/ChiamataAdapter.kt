@@ -20,6 +20,7 @@ class ChiamataAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val txtNome: TextView = view.findViewById(R.id.txtNome)
         val txtData: TextView = view.findViewById(R.id.txtData)
+        val txtNumero: TextView = view.findViewById(R.id.txtNumero)
         val btnChiama: ImageButton = view.findViewById(R.id.btnChiama)
     }
 
@@ -39,26 +40,26 @@ class ChiamataAdapter(
             CallLog.Calls.BLOCKED_TYPE -> "Bloccata"
             else -> "Ricevuta"
         }
-        holder.txtData.text = "$tipo  •  ${voce.dataFormattata}\n${voce.numeroVisualizzabile()}"
-        holder.txtData.setTextColor(
-            androidx.core.content.ContextCompat.getColor(
-                holder.itemView.context,
-                if (voce.tipo == CallLog.Calls.MISSED_TYPE) R.color.end_call else R.color.text_secondary
-            )
-        )
+        val ctx = holder.itemView.context
+        val (coloreTipo, sfondoTipo, cerchioTipo) = when (voce.tipo) {
+            CallLog.Calls.OUTGOING_TYPE ->
+                Triple(R.color.primary, R.drawable.bg_item_uscita, R.drawable.bg_circle_primary)
+            CallLog.Calls.MISSED_TYPE, CallLog.Calls.REJECTED_TYPE, CallLog.Calls.BLOCKED_TYPE ->
+                Triple(R.color.end_call, R.drawable.bg_item_persa, R.drawable.bg_circle_rosso)
+            else ->
+                Triple(R.color.viola, R.drawable.bg_item_entrata, R.drawable.bg_circle_viola)
+        }
+        holder.txtData.text = "${tipo.uppercase()}  •  ${voce.dataFormattata}"
+        holder.txtData.setTextColor(androidx.core.content.ContextCompat.getColor(ctx, coloreTipo))
+        holder.txtNumero.text = voce.numeroVisualizzabile()
         val richiamabile = voce.numero.isNotBlank() && !voce.numero.startsWith("-")
         holder.btnChiama.visibility = if (richiamabile) View.VISIBLE else View.INVISIBLE
         holder.btnChiama.isEnabled = !modalitaSelezione
-        val sfondo = if (voce.id in selezionate) {
-            R.drawable.bg_chiamata_selezionata
-        } else {
-            val valore = android.util.TypedValue()
-            holder.itemView.context.theme.resolveAttribute(
-                android.R.attr.selectableItemBackground, valore, true
-            )
-            valore.resourceId
-        }
-        holder.itemView.setBackgroundResource(sfondo)
+        holder.btnChiama.setBackgroundResource(cerchioTipo)
+        holder.btnChiama.setColorFilter(androidx.core.content.ContextCompat.getColor(ctx, coloreTipo))
+        holder.itemView.setBackgroundResource(
+            if (voce.id in selezionate) R.drawable.bg_chiamata_selezionata else sfondoTipo
+        )
         ColoriTesto.applica(holder.itemView)
         holder.btnChiama.setOnClickListener {
             ChiamaHelper.chiama(holder.itemView.context, voce.numero)

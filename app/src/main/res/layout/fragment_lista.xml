@@ -14,7 +14,10 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="@color/card"
+            android:background="@drawable/bg_ricerca"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
             android:visibility="gone">
@@ -23,6 +26,7 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:src="@android:drawable/ic_menu_search"
+                android:tint="@color/primary"
                 android:contentDescription="Cerca" />
 
             <EditText
@@ -32,6 +36,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
                 android:hint="Cerca in rubrica…"
+                android:textColorHint="@color/text_secondary"
                 android:inputType="text"
                 android:maxLines="1"
                 android:background="@android:color/transparent"
@@ -117,7 +122,7 @@
         android:layout_gravity="end"
         android:layout_marginTop="62dp"
         android:layout_marginBottom="74dp"
-        android:background="@color/card"
+        android:background="@android:color/transparent"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingTop="4dp"

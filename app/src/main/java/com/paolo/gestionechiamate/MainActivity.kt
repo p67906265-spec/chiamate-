@@ -52,6 +52,9 @@ class MainActivity : AppCompatActivity() {
         viewPager.isUserInputEnabled = false
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        val coloriNav = androidx.core.content.ContextCompat.getColorStateList(this, R.color.selector_nav_colore)
+        bottomNav.itemTextColor = coloriNav
+        bottomNav.itemIconTintList = coloriNav
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_chiamate -> {

@@ -34,6 +34,7 @@
             android:id="@+id/txtNumero"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="monospace"
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:maxLines="1"
@@ -46,7 +47,8 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:background="@drawable/bg_circle_primary"
-        android:src="@android:drawable/ic_menu_call"
+        android:padding="10dp"
+        android:src="@drawable/ic_nav_chiamate"
         android:tint="@color/primary"
         android:contentDescription="@string/chiama" />
 

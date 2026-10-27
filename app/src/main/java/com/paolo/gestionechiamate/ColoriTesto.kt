@@ -12,6 +12,7 @@ object ColoriTesto {
     }
 
     private fun applicaRicorsivo(view: View, colore: Int) {
+        if (view is com.google.android.material.bottomnavigation.BottomNavigationView) return
         if (view is TextView) {
             val primario = ContextCompat.getColor(view.context, R.color.text_primary)
             val secondario = ContextCompat.getColor(view.context, R.color.text_secondary)
